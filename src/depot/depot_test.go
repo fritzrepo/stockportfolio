@@ -7,7 +7,7 @@ import (
 )
 
 func TestComputeTransactions(t *testing.T) {
-	expected := map[string]depotEntry{
+	expected := map[string]DepotEntry{
 		"Apple": {
 			assetType:    "stock",
 			asset:        "Apple",

@@ -4,12 +4,15 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"golang.org/x/text/currency"
 )
 
-type transaction struct {
+type Transaction struct {
+	id              uuid.UUID
 	date            time.Time
 	transactionType string //besser enum buy, sell
+	IsClosed        bool
 	assetType       string //stock, crypto, forex
 	asset           string
 	tickerSymbol    string
@@ -20,7 +23,7 @@ type transaction struct {
 	currency        currency.Unit
 }
 
-type depotEntry struct {
+type DepotEntry struct {
 	assetType    string
 	asset        string
 	tickerSymbol string
@@ -30,79 +33,101 @@ type depotEntry struct {
 	currency     currency.Unit
 }
 
-func calculateProfitLoss() {
-	//ToDo => Implementieren
-	//FiFo-Prinzip (First in, first out)
-
-	//Durchschnittskostenmethode (average cost)
+type RealizedGain struct {
+	SellTransactionID uuid.UUID   // ID der Verkaufstransaktion
+	BuyTransactions   []uuid.UUID // Liste von Kauf-IDs, die diesem Verkauf zugeordnet sind
+	Amount            float64     // Der Gewinn/Verlust-Betrag
+	IsProfit          bool        // true für Gewinn, false für Verlust
+	TaxRate           float64     // Anwendbarer Steuersatz
+	Quantity          int
+	BuyPrice          float64
+	SellPrice         float64
 }
 
-func ComputeTransactions() map[string]depotEntry {
-	transactions := []transaction{} // Ein Slice für Transaktionen
-	transactions = append(transactions, transaction{date: time.Now(), transactionType: "buy",
+// func calculateProfitLoss(sellTrans Transaction, buyTransactions []Transaction) RealizedGain {
+// 	//ToDo => Implementieren
+// 	//FiFo-Prinzip (First in, first out)
+
+// 	//Durchschnittskostenmethode (average cost)
+// }
+
+func ComputeTransactions() map[string]DepotEntry {
+	transactions := []Transaction{} // Ein Slice für Transaktionen
+	transactions = append(transactions, Transaction{date: time.Now(), transactionType: "buy",
 		assetType: "stock", asset: "Apple", tickerSymbol: "AAPL",
-		quantity: 10, price: 100.5, fees: 4, totalPrice: 1009, currency: currency.EUR})
-	transactions = append(transactions, transaction{date: time.Now(), transactionType: "buy",
+		quantity: 10, price: 100.5, fees: 4, totalPrice: 1009, currency: currency.EUR, id: uuid.New()})
+	transactions = append(transactions, Transaction{date: time.Now(), transactionType: "buy",
 		assetType: "stock", asset: "Apple", tickerSymbol: "AAPL",
-		quantity: 20, price: 100.5, fees: 4, totalPrice: 2014, currency: currency.EUR})
-	transactions = append(transactions, transaction{date: time.Now(), transactionType: "buy",
+		quantity: 20, price: 100.5, fees: 4, totalPrice: 2014, currency: currency.EUR, id: uuid.New()})
+	transactions = append(transactions, Transaction{date: time.Now(), transactionType: "buy",
 		assetType: "stock", asset: "BASF", tickerSymbol: "BAS1",
-		quantity: 100, price: 45.5, fees: 5, totalPrice: 4555, currency: currency.EUR})
+		quantity: 100, price: 45.5, fees: 5, totalPrice: 4555, currency: currency.EUR, id: uuid.New()})
 
-	//depot := []depotEntry{} // Ein Slice für Depot Einträge
-
-	depotMap := make(map[string]depotEntry)
+	unclosedTransactions := make(map[string][]Transaction)
+	depotEntries := make(map[string]DepotEntry)
+	//realizedGains := make([]RealizedGain, 10)
 
 	for _, value := range transactions {
 		fmt.Println(value.asset)
 
-		//Wenn das Asset noch nicht im Depot ist, dann füge es hinzu
-		// if !contains(depot, value.asset) {
-
-		// 	depot = append(depot, depotEntry{assetType: value.assetType, asset: value.asset,
-		// 		tickerSymbol: value.tickerSymbol, quantity: value.quantity, price: value.price,
-		// 		totalPrice: value.totalPrice, currency: value.currency})
-
-		// 	continue
-		// }
-
-		//Wenn das Asset schon im Depot ist, dann aktualisiere die Anzahl und den Preis
-		// for i, v := range depot {
-		// 	if v.asset == value.asset {
-		// 		depot[i].quantity += value.quantity
-		// 		depot[i].totalPrice += value.totalPrice
-		// 	}
-		// }
-
+		//Handle die Asset-Transaktionen
 		//Buy transaction
 		if value.transactionType == "buy" {
-			entry, exists := depotMap[value.asset]
-			if !exists {
-				//if depotMap[value.asset] == (depotEntry{}) {
-				depotMap[value.asset] = depotEntry{assetType: value.assetType, asset: value.asset,
-					tickerSymbol: value.tickerSymbol, quantity: value.quantity, price: value.price,
-					totalPrice: value.totalPrice, currency: value.currency}
+			transaction, exists := unclosedTransactions[value.asset]
+			//Gibt es schon Transaktionen für das Asset? Dann füge die neue Transaktion hinzu.
+			if exists {
+				transaction = append(transaction, value)
+				unclosedTransactions[value.asset] = transaction
 			} else {
-				//entry = depotMap[value.asset]
-				entry.quantity += value.quantity
-				entry.totalPrice += value.totalPrice
-				depotMap[value.asset] = entry
+				//Gibt es noch keine Transaktionen für das Asset? Dann erstelle einen neuen Slice mit der Transaktion.
+				unclosedTransaction := make([]Transaction, 1)
+				unclosedTransaction = append(unclosedTransaction, value)
+				unclosedTransactions[value.asset] = unclosedTransaction
 			}
 		}
+
 		//Sell transaction
 		if value.transactionType == "sell" {
-			entry, exists := depotMap[value.asset]
+			transactions, exists := unclosedTransactions[value.asset]
 			if exists {
-				entry.quantity -= value.quantity
-				entry.totalPrice -= value.totalPrice
-				depotMap[value.asset] = entry
-				//Stelle Gewinn/Verlust fest
-				//ToDo => Implementieren
+				//Ziehe die Anzahl der verkauften Assets von der ersten buy Transaktion ab
+				//Sollten mehr Assets verkauft werden, als gekauft wurden, dann wird
+				//die nächste buy Transaktion noch verwendet.
+				//Code wurde erstellt
+				for i, transaction := range transactions {
+					if transaction.transactionType == "buy" {
+						//Buy und sell Transaktionen sind gleich
+						if transaction.quantity == value.quantity {
+							//Entferne die buy Transaktion aus dem Slice
+							transactions = append(transactions[:i], transactions[i+1:]...)
+							//Berechne den Gewinn / Verlust
 
-				//Wenn die Anzahl 0 ist, lösche den Eintrag aus dem Depot
-				if entry.quantity == 0 {
-					delete(depotMap, value.asset)
+							break
+						}
+						//Buy Transaktion ist größer als die Sell Transaktion
+						if transaction.quantity > value.quantity {
+							//Buy Transaktion verkleinern um die Anzahl der verkauften Assets
+							transaction.quantity -= value.quantity
+							transaction.totalPrice -= value.totalPrice
+							transactions[i] = transaction
+							//Berechne den Gewinn / Verlust
+
+							break
+						}
+						//Buy Transaktion ist kleiner als die Sell Transaktion
+						if transaction.quantity < value.quantity {
+							value.quantity -= transaction.quantity
+							value.totalPrice -= transaction.totalPrice
+							//Entferne die Transaktion aus dem Slice
+							transactions = append(transactions[:i], transactions[i+1:]...)
+							//Berechne den Gewinn / Verlust
+
+							//Sell transaction muss auf die nächste buy transaction angewendet werden
+							//Daher kein break
+						}
+					}
 				}
+				unclosedTransactions[value.asset] = transactions
 			} else {
 				//ToDo => Richtige Fehlermeldung implementieren
 				fmt.Println("Asset not found in	depot")
@@ -110,8 +135,27 @@ func ComputeTransactions() map[string]depotEntry {
 		}
 	}
 
+	//Handle depot
+	for _, transactions := range unclosedTransactions {
+		for _, transaction := range transactions {
+			//Wenn das Asset noch nicht im Depot ist, dann füge es hinzu
+			entry, exists := depotEntries[transaction.asset]
+			if !exists {
+
+				depotEntries[transaction.asset] = DepotEntry{assetType: transaction.assetType, asset: transaction.asset,
+					tickerSymbol: transaction.tickerSymbol, quantity: transaction.quantity, price: transaction.price,
+					totalPrice: transaction.totalPrice, currency: transaction.currency}
+			} else {
+				//Wenn das Asset schon im Depot ist, dann aktualisiere die Anzahl und den Preis
+				entry.quantity += transaction.quantity
+				entry.totalPrice += transaction.totalPrice
+				depotEntries[transaction.asset] = entry
+			}
+		}
+	}
+
 	//fmt.Println(depot)
-	fmt.Println(depotMap)
+	fmt.Println(depotEntries)
 	fmt.Println(transactions[0].date.Format("2006-01-02"))
-	return depotMap
+	return depotEntries
 }

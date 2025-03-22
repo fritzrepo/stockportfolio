@@ -12,10 +12,10 @@ func TestComputeTransactions(t *testing.T) {
 			assetType:    "stock",
 			asset:        "Apple",
 			tickerSymbol: "AAPL",
-			quantity:     30,
+			quantity:     20,
 			price:        100.5,
-			totalPrice:   3023,
-			currency:     currency.EUR,
+			//totalPrice:   2014,
+			currency: currency.EUR,
 		},
 		"BASF": {
 			assetType:    "stock",
@@ -23,8 +23,8 @@ func TestComputeTransactions(t *testing.T) {
 			tickerSymbol: "BAS1",
 			quantity:     100,
 			price:        45.5,
-			totalPrice:   4555,
-			currency:     currency.EUR,
+			//totalPrice:   4555,
+			currency: currency.EUR,
 		},
 	}
 

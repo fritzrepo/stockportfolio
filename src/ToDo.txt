@@ -1,0 +1,9 @@
+Funktion schreiben um eine Liste von Transaktionen einzulesen.
+Diese Liste in eine lokale DB persistieren.
+Ausführliche Tests schreiben um die Berechnung des Gewinns/Verlustes zu kontrollieren.
+Testen ob die Depot-Einträge korrekt sind.
+
+-Nachdem alle Assets einer buy Transaktion verkauft sind, diese Transaktion auf "IsClosed" setzen.
+Muss im "Sell transaction" Abschnitt der ComputeTransactions() Funktion erfolgen. Danach müsste man
+überlegen, wie neue Transaktionen verarbeitet werden, ohne alle Transaktionen durch zulaufen. Also die
+"IsClosed" Transaktionen überspringen.

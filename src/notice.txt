@@ -1,0 +1,62 @@
+//Buy transaction
+if value.transactionType == "buy" {
+
+	entry, exists := depotEntries[value.asset]
+	//Wenn das Asset noch nicht im Depot ist, dann füge es hinzu.
+	if !exists {
+		depotEntries[value.asset] = DepotEntry{assetType: value.assetType, asset: value.asset,
+			tickerSymbol: value.tickerSymbol, quantity: value.quantity, price: value.price,
+			totalPrice: value.totalPrice, currency: value.currency}
+	} else {
+		//Wenn das Asset schon im Depot ist, dann aktualisiere die Anzahl und den Preis.
+		entry.quantity += value.quantity
+		entry.totalPrice += value.totalPrice
+		depotEntries[value.asset] = entry
+	}
+}
+//Sell transaction
+if value.transactionType == "sell" {
+	entry, exists := depotEntries[value.asset]
+	if exists {
+		entry.quantity -= value.quantity
+		entry.totalPrice -= value.totalPrice
+		depotEntries[value.asset] = entry
+		//Stelle Gewinn/Verlust fest
+		//ToDo => Implementieren
+
+		//Wenn die Anzahl 0 ist, lösche den Eintrag aus dem Depot
+		if entry.quantity == 0 {
+			delete(depotEntries, value.asset)
+		}
+	} else {
+		//ToDo => Richtige Fehlermeldung implementieren
+		fmt.Println("Asset not found in	depot")
+	}
+}
+
+// contains prüft, ob ein Wert im Slice vorhanden ist
+// func contains(slice []depotEntry, value string) bool {
+// 	for _, v := range slice {
+// 		if v.asset == value {
+// 			return true
+// 		}
+// 	}
+// 	return false
+// }
+
+//Wenn das Asset noch nicht im Depot ist, dann füge es hinzu
+// if !contains(depot, value.asset) {
+
+// 	depot = append(depot, depotEntry{assetType: value.assetType, asset: value.asset,
+// 		tickerSymbol: value.tickerSymbol, quantity: value.quantity, price: value.price,
+// 		totalPrice: value.totalPrice, currency: value.currency})
+// 	continue
+// }
+
+//Wenn das Asset schon im Depot ist, dann aktualisiere die Anzahl und den Preis
+// for i, v := range depot {
+// 	if v.asset == value.asset {
+// 		depot[i].quantity += value.quantity
+// 		depot[i].totalPrice += value.totalPrice
+// 	}
+// }

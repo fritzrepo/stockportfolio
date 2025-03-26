@@ -28,7 +28,7 @@ func TestComputeTransactions(t *testing.T) {
 		},
 	}
 
-	result := ComputeTransactions()
+	result, _ := ComputeTransactions("../data/RawTransactions.csv")
 
 	for key, expectedEntry := range expected {
 		resultEntry, exists := result[key]

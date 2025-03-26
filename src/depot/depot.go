@@ -3,8 +3,8 @@ package depot
 import (
 	"fmt"
 	"slices"
-	"time"
 
+	"github.com/fritzrepo/stockportfolio/depot/importer"
 	"github.com/fritzrepo/stockportfolio/models"
 	"github.com/google/uuid"
 	"golang.org/x/text/currency"
@@ -36,21 +36,26 @@ type RealizedGain struct {
 	SellPrice         float32
 }
 
-func ComputeTransactions() map[string]DepotEntry {
+func ComputeTransactions(filePath string) (map[string]DepotEntry, error) {
 
-	transactions := []models.Transaction{} // Ein Slice für alle Transaktionen
-	transactions = append(transactions, models.Transaction{Date: time.Now(), TransactionType: "buy",
-		AssetType: "stock", Asset: "Apple", TickerSymbol: "AAPL",
-		Quantity: 10, Price: 100.5, Fees: 4, Currency: currency.EUR, Id: uuid.New()})
-	transactions = append(transactions, models.Transaction{Date: time.Now(), TransactionType: "buy",
-		AssetType: "stock", Asset: "Apple", TickerSymbol: "AAPL",
-		Quantity: 20, Price: 100.5, Fees: 4, Currency: currency.EUR, Id: uuid.New()})
-	transactions = append(transactions, models.Transaction{Date: time.Now(), TransactionType: "buy",
-		AssetType: "stock", Asset: "BASF", TickerSymbol: "BAS1",
-		Quantity: 100, Price: 45.5, Fees: 5, Currency: currency.EUR, Id: uuid.New()})
-	transactions = append(transactions, models.Transaction{Date: time.Now(), TransactionType: "sell",
-		AssetType: "stock", Asset: "Apple", TickerSymbol: "AAPL",
-		Quantity: 10, Price: 100.5, Fees: 4, Currency: currency.EUR, Id: uuid.New()})
+	// transactions := []models.Transaction{} // Ein Slice für alle Transaktionen
+	// transactions = append(transactions, models.Transaction{Date: time.Now(), TransactionType: "buy",
+	// 	AssetType: "stock", Asset: "Apple", TickerSymbol: "AAPL",
+	// 	Quantity: 10, Price: 100.5, Fees: 4, Currency: currency.EUR, Id: uuid.New()})
+	// transactions = append(transactions, models.Transaction{Date: time.Now(), TransactionType: "buy",
+	// 	AssetType: "stock", Asset: "Apple", TickerSymbol: "AAPL",
+	// 	Quantity: 20, Price: 100.5, Fees: 4, Currency: currency.EUR, Id: uuid.New()})
+	// transactions = append(transactions, models.Transaction{Date: time.Now(), TransactionType: "buy",
+	// 	AssetType: "stock", Asset: "BASF", TickerSymbol: "BAS1",
+	// 	Quantity: 100, Price: 45.5, Fees: 5, Currency: currency.EUR, Id: uuid.New()})
+	// transactions = append(transactions, models.Transaction{Date: time.Now(), TransactionType: "sell",
+	// 	AssetType: "stock", Asset: "Apple", TickerSymbol: "AAPL",
+	// 	Quantity: 10, Price: 100.5, Fees: 4, Currency: currency.EUR, Id: uuid.New()})
+
+	transactions, err := importer.LoadTransactions(filePath)
+	if err != nil {
+		return nil, err
+	}
 
 	unclosedTransactions := make(map[string][]models.Transaction)
 	depotEntries := make(map[string]DepotEntry)
@@ -100,7 +105,6 @@ func ComputeTransactions() map[string]DepotEntry {
 							realizedGains = append(realizedGains, calculateProfitLoss(newTransaction, availableBuyTrans))
 							//Buy Transaktion verkleinern um die Anzahl der verkauften Assets
 							availableBuyTrans.Quantity -= newTransaction.Quantity
-							//availableBuyTrans.totalPrice -= newTransaction.totalPrice //Total price könnte sich auch selbst berechnen
 							transactions[i] = availableBuyTrans
 							break
 						}
@@ -110,7 +114,6 @@ func ComputeTransactions() map[string]DepotEntry {
 							//Berechne den Gewinn / Verlust
 							realizedGains = append(realizedGains, calculateProfitLoss(newTransaction, availableBuyTrans))
 
-							//newTransaction.totalPrice -= availableBuyTrans.totalPrice
 							//Entferne die Transaktion aus dem Slice
 							transactions = slices.Delete(transactions, i, i+1)
 
@@ -145,17 +148,12 @@ func ComputeTransactions() map[string]DepotEntry {
 			//Wenn das Asset noch nicht im Depot ist, dann füge es hinzu
 			entry, exists := depotEntries[transaction.Asset]
 			if !exists {
-
-				// depotEntries[transaction.asset] = DepotEntry{assetType: transaction.assetType, asset: transaction.asset,
-				// 	tickerSymbol: transaction.tickerSymbol, quantity: transaction.quantity, price: transaction.price,
-				// 	totalPrice: transaction.totalPrice, currency: transaction.currency}
 				depotEntries[transaction.Asset] = DepotEntry{assetType: transaction.AssetType, asset: transaction.Asset,
 					tickerSymbol: transaction.TickerSymbol, quantity: transaction.Quantity, price: transaction.Price,
 					currency: transaction.Currency}
 			} else {
 				//Wenn das Asset schon im Depot ist, dann aktualisiere die Anzahl und den Preis
 				entry.quantity += transaction.Quantity
-				//entry.totalPrice += transaction.totalPrice
 				depotEntries[transaction.Asset] = entry
 			}
 		}
@@ -164,8 +162,6 @@ func ComputeTransactions() map[string]DepotEntry {
 	//fmt.Println(depot)
 	fmt.Println(("Abgeschlossene Transaktionen"))
 	fmt.Println(realizedGains)
-	fmt.Println("Depot:")
-	fmt.Println(depotEntries)
-	fmt.Println(transactions[0].Date.Format("2006-01-02"))
-	return depotEntries
+	//fmt.Println(transactions[0].Date.Format("2006-01-02"))
+	return depotEntries, nil
 }

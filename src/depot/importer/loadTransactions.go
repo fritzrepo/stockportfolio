@@ -12,7 +12,7 @@ import (
 	"golang.org/x/text/currency"
 )
 
-func LoadTransactions(filename string) ([]models.Transaction, error) {
+func LoadTransactions(filename string, uuidGenerator func() uuid.UUID) ([]models.Transaction, error) {
 	lines, err := loadFile(filename)
 	if err != nil {
 		return nil, err
@@ -51,7 +51,8 @@ func LoadTransactions(filename string) ([]models.Transaction, error) {
 			return nil, err
 		}
 		transaction.Currency = currency
-		transaction.Id = uuid.New()
+		transaction.Id = uuidGenerator()
+		transaction.IsClosed = false
 		transactions = append(transactions, transaction)
 	}
 	return transactions, nil

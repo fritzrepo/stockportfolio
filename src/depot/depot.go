@@ -2,7 +2,6 @@ package depot
 
 import (
 	"fmt"
-	"slices"
 
 	"github.com/fritzrepo/stockportfolio/depot/importer"
 	"github.com/fritzrepo/stockportfolio/models"
@@ -19,14 +18,15 @@ type DepotEntry struct {
 	currency     currency.Unit
 }
 
-// TotalPrice berechnet und gibt den Gesamtpreis zurück
+// TotalPrice berechnet und gibt den gesamt Ankaufspreis zurück
 func (d *DepotEntry) TotalPrice() float32 {
 	return d.quantity * d.price
 }
 
 type RealizedGain struct {
-	SellTransactionID uuid.UUID // ID der Verkaufstransaktion
-	BuyTransactions   uuid.UUID // ID der Kauftransaktion
+	Id                uuid.UUID // ID der Realisierung
+	SellTransactionId uuid.UUID // ID der Verkaufstransaktion
+	BuyTransactionsId uuid.UUID // ID der Kauftransaktion
 	Asset             string    // Asset-Name
 	Amount            float32   // Der Gewinn/Verlust-Betrag
 	IsProfit          bool      // true für Gewinn, false für Verlust
@@ -36,25 +36,18 @@ type RealizedGain struct {
 	SellPrice         float32
 }
 
-func ComputeTransactions(filePath string) (map[string]DepotEntry, error) {
+type Depot struct {
+	DepotEntries         map[string]DepotEntry
+	RealizedGains        []RealizedGain
+	unclosedTransactions map[string][]models.Transaction
+	uuidGenerator        func() uuid.UUID
+}
 
-	// transactions := []models.Transaction{} // Ein Slice für alle Transaktionen
-	// transactions = append(transactions, models.Transaction{Date: time.Now(), TransactionType: "buy",
-	// 	AssetType: "stock", Asset: "Apple", TickerSymbol: "AAPL",
-	// 	Quantity: 10, Price: 100.5, Fees: 4, Currency: currency.EUR, Id: uuid.New()})
-	// transactions = append(transactions, models.Transaction{Date: time.Now(), TransactionType: "buy",
-	// 	AssetType: "stock", Asset: "Apple", TickerSymbol: "AAPL",
-	// 	Quantity: 20, Price: 100.5, Fees: 4, Currency: currency.EUR, Id: uuid.New()})
-	// transactions = append(transactions, models.Transaction{Date: time.Now(), TransactionType: "buy",
-	// 	AssetType: "stock", Asset: "BASF", TickerSymbol: "BAS1",
-	// 	Quantity: 100, Price: 45.5, Fees: 5, Currency: currency.EUR, Id: uuid.New()})
-	// transactions = append(transactions, models.Transaction{Date: time.Now(), TransactionType: "sell",
-	// 	AssetType: "stock", Asset: "Apple", TickerSymbol: "AAPL",
-	// 	Quantity: 10, Price: 100.5, Fees: 4, Currency: currency.EUR, Id: uuid.New()})
+func (d *Depot) ComputeTransactions(filePath string) error {
 
-	transactions, err := importer.LoadTransactions(filePath)
+	transactions, err := importer.LoadTransactions(filePath, d.uuidGenerator)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	unclosedTransactions := make(map[string][]models.Transaction)
@@ -62,7 +55,8 @@ func ComputeTransactions(filePath string) (map[string]DepotEntry, error) {
 	realizedGains := make([]RealizedGain, 0, 5)
 
 	for _, newTransaction := range transactions {
-		fmt.Println(newTransaction.Asset)
+
+		//fmt.Println(newTransaction.Asset, newTransaction.TransactionType, newTransaction.Id)
 
 		//Handle die Asset-Transaktionen
 		//Add buy transaction to unclosed transactionsavailableBuytrans
@@ -78,6 +72,7 @@ func ComputeTransactions(filePath string) (map[string]DepotEntry, error) {
 				unclosedTransaction = append(unclosedTransaction, newTransaction)
 				unclosedTransactions[newTransaction.Asset] = unclosedTransaction
 			}
+			continue
 		}
 
 		//Sell transaction
@@ -85,37 +80,63 @@ func ComputeTransactions(filePath string) (map[string]DepotEntry, error) {
 			transactions, exists := unclosedTransactions[newTransaction.Asset]
 			if exists {
 				//FiFo-Prinzip (First in, first out)
-				//Ziehe die Anzahl der verkauften Assets von der ersten buy Transaktion ab
+				//Ziehe die Anzahl der verkauften Assets von der ersten buy Transaktion ab.
 				//Sollten mehr Assets verkauft werden, als gekauft wurden, dann wird
-				//die nächste buy Transaktion noch verwendet.
+				//die nächste buy Transaktion verwendet.
 				//Code wurde erstellt
-				for i, availableBuyTrans := range transactions {
+				modifyTransactions := make([]models.Transaction, len(transactions))
+
+				_ = copy(modifyTransactions, transactions)
+				//fmt.Println("Anzahl der kopierten Transaktionen: ", count)
+
+				for _, availableBuyTrans := range transactions {
 					if availableBuyTrans.TransactionType == "buy" {
 						//Buy und sell Transaktionen sind gleich
 						if availableBuyTrans.Quantity == newTransaction.Quantity {
-							//Entferne die buy Transaktion aus dem Slice
-							transactions = slices.Delete(transactions, i, i+1)
+							//Entferne die Transaktion aus der modifyTransactions
+							filteredTransactions := []models.Transaction{}
+							for _, transaction := range modifyTransactions {
+								if transaction.Id != availableBuyTrans.Id {
+									filteredTransactions = append(filteredTransactions, transaction)
+								}
+							}
+							modifyTransactions = filteredTransactions
+
 							//Berechne den Gewinn / Verlust
-							realizedGains = append(realizedGains, calculateProfitLoss(newTransaction, availableBuyTrans))
+							realizedGains = append(realizedGains, calculateProfitLoss(d.uuidGenerator, newTransaction, availableBuyTrans))
 							break
 						}
 						//Buy Transaktion ist größer als die Sell Transaktion
 						if availableBuyTrans.Quantity > newTransaction.Quantity {
 							//Berechne den Gewinn / Verlust
-							realizedGains = append(realizedGains, calculateProfitLoss(newTransaction, availableBuyTrans))
+							realizedGains = append(realizedGains, calculateProfitLoss(d.uuidGenerator, newTransaction, availableBuyTrans))
 							//Buy Transaktion verkleinern um die Anzahl der verkauften Assets
 							availableBuyTrans.Quantity -= newTransaction.Quantity
-							transactions[i] = availableBuyTrans
+
+							//Suche in den modifyTransactions die Transaktion
+							for i, transaction := range modifyTransactions {
+								if transaction.Id == availableBuyTrans.Id {
+									modifyTransactions[i] = availableBuyTrans
+									break
+								}
+							}
 							break
 						}
 						//Buy Transaktion ist kleiner als die Sell Transaktion
 						if availableBuyTrans.Quantity < newTransaction.Quantity {
-							newTransaction.Quantity -= availableBuyTrans.Quantity
-							//Berechne den Gewinn / Verlust
-							realizedGains = append(realizedGains, calculateProfitLoss(newTransaction, availableBuyTrans))
 
-							//Entferne die Transaktion aus dem Slice
-							transactions = slices.Delete(transactions, i, i+1)
+							//Berechne den Gewinn / Verlust
+							realizedGains = append(realizedGains, calculateProfitLoss(d.uuidGenerator, newTransaction, availableBuyTrans))
+							newTransaction.Quantity -= availableBuyTrans.Quantity
+
+							//Entferne die Transaktion aus der modifyTransactions
+							filteredTransactions := []models.Transaction{}
+							for _, transaction := range modifyTransactions {
+								if transaction.Id != availableBuyTrans.Id {
+									filteredTransactions = append(filteredTransactions, transaction)
+								}
+							}
+							modifyTransactions = filteredTransactions
 
 							//Der Rest der Sell transaction muss auf die nächste buy transaction angewendet werden
 							//Daher kein break
@@ -126,11 +147,11 @@ func ComputeTransactions(filePath string) (map[string]DepotEntry, error) {
 					}
 				}
 				//Wennn die tansactions leer sind, dann lösche den Eintrag
-				if len(transactions) == 0 {
+				if len(modifyTransactions) == 0 {
 					delete(unclosedTransactions, newTransaction.Asset)
 				} else {
 					//Aktualisiere die Transaktionen
-					unclosedTransactions[newTransaction.Asset] = transactions
+					unclosedTransactions[newTransaction.Asset] = modifyTransactions
 				}
 
 				//Durchschnittskostenmethode (average cost)
@@ -159,9 +180,22 @@ func ComputeTransactions(filePath string) (map[string]DepotEntry, error) {
 		}
 	}
 
+	d.unclosedTransactions = unclosedTransactions
+	d.DepotEntries = depotEntries
+	d.RealizedGains = realizedGains
+
 	//fmt.Println(depot)
-	fmt.Println(("Abgeschlossene Transaktionen"))
-	fmt.Println(realizedGains)
+	//fmt.Println(("Abgeschlossene Transaktionen"))
+	//fmt.Println(realizedGains)
 	//fmt.Println(transactions[0].Date.Format("2006-01-02"))
-	return depotEntries, nil
+	return nil
+}
+
+func NewDepot(uuidGen func() uuid.UUID) Depot {
+	return Depot{
+		DepotEntries:         make(map[string]DepotEntry),
+		RealizedGains:        make([]RealizedGain, 0, 5),
+		unclosedTransactions: make(map[string][]models.Transaction),
+		uuidGenerator:        uuidGen,
+	}
 }

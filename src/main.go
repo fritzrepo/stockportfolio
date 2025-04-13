@@ -5,6 +5,7 @@ import (
 
 	"github.com/fritzrepo/stockportfolio/config"
 	"github.com/fritzrepo/stockportfolio/depot"
+	"github.com/google/uuid"
 )
 
 func main() {
@@ -15,7 +16,13 @@ func main() {
 		panic(err)
 	}
 
-	depot, err := depot.ComputeTransactions(config.TransactionFilePath)
+	// var generateUUID = func() uuid.UUID {
+	// 	return uuid.New() // Echte, zufällige UUID
+	// }
+	//Könnte sein das ich das hier nicht brauche
+	dep := depot.NewDepot(uuid.New)
+
+	err = dep.ComputeTransactions(config.TransactionFilePath)
 	if err != nil {
 		// Fehlerbehandlung
 		fmt.Println("Error computing transactions")
@@ -23,6 +30,8 @@ func main() {
 	}
 
 	fmt.Println("Depot:")
-	fmt.Println(depot)
+	fmt.Println(dep.DepotEntries)
+	fmt.Println("Realized Gains:")
+	fmt.Println(dep.RealizedGains)
 	fmt.Println("End")
 }

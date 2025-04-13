@@ -7,14 +7,16 @@ Jede Abrechnung erzeugt einen "Realized Gains" (Gewinn / Verlust) Datensatz.
 
 ## Sell Transaktionen lösen eine Abrechnung aus
 Wenn die nächste Transaktion vom Typ "sell" ist, wird zu diesem Asset die erste vorhandene unclosed transaction gesucht.
-Drei mögliche Abrechnungen gibt es:
+Es gilt das FiFo-Prinzip (First in, first out).
+
+Drei mögliche Abrechnungen gibt es dann:
 1. Anzahl der Assets ist gleich
 2. Anzahl der sell Assets ist kleiner
 3. Anzahl der sell Assets ist größer
 
 #### Anzahl der Assets ist gleich
 - Gewinn / Verlust ausrechnen
-- Buy Transaktion aus "unclosed transactions" löschen
+- Buy-Transaktion aus "unclosed transactions" löschen
 - Die original buy Transaktion auf "IsClosed" setzen
 
 #### Anzahl der sell Assets ist kleiner
@@ -24,3 +26,11 @@ Drei mögliche Abrechnungen gibt es:
 #### Anzahl der sell Assets ist größer
 - Erste unclosed transaction behandeln wie in "Anzahl der Assets ist gleich".
 - Mit den restlichen sell Assets wieder von vorne anfangen.
+- Erstellt für jede und jede angefangene Buy-Transaktion eine Abrechnung
+
+
+Noch zumachen:
+Die UUID von realizedGains kann wenn die Tests auch ohne sie möglich sind entfernt werden.
+Test erstellen von einfachen realisierten Transanktionen und Depoteinträgen bis zu komplizierten Kauf- und Verkauftransaktionen.
+Weil totalPrice berechnet wird, diese im Unit test gesondert überprüfen oder bleiben lassen.
+Price in Depot kann ein Durchschnittspreis sein. Dies ist zu testen.

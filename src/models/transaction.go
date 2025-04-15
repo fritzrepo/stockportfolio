@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"golang.org/x/text/currency"
 )
 
 type Transaction struct {
@@ -18,7 +17,7 @@ type Transaction struct {
 	Quantity        float32
 	Price           float32
 	Fees            float32
-	Currency        currency.Unit
+	Currency        string
 }
 
 // TotalPrice berechnet und gibt den Gesamtpreis zurück

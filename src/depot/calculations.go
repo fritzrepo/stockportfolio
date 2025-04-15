@@ -9,7 +9,7 @@ func calculateProfitLoss(uuidGenerator func() uuid.UUID, sellTrans models.Transa
 	result := RealizedGain{}
 	result.Id = uuidGenerator()
 	result.SellTransactionId = sellTrans.Id
-	result.BuyTransactionsId = buyTransaction.Id
+	result.BuyTransactionId = buyTransaction.Id
 	result.Asset = sellTrans.Asset
 	//So könnte die Steuerberechnung aussehen, von Copilot vorgeschlagen
 	// if sellTrans.date.Before(buyTransaction.date) {

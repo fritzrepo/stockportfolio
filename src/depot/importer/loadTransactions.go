@@ -9,7 +9,6 @@ import (
 
 	"github.com/fritzrepo/stockportfolio/models"
 	"github.com/google/uuid"
-	"golang.org/x/text/currency"
 )
 
 func LoadTransactions(filename string, uuidGenerator func() uuid.UUID) ([]models.Transaction, error) {
@@ -46,11 +45,11 @@ func LoadTransactions(filename string, uuidGenerator func() uuid.UUID) ([]models
 			return nil, err
 		}
 		transaction.Fees = float32(fees)
-		currency, err := currency.ParseISO(values[8])
-		if err != nil {
-			return nil, err
-		}
-		transaction.Currency = currency
+		// currency, err := currency.ParseISO(values[8])
+		// if err != nil {
+		// 	return nil, err
+		// }
+		transaction.Currency = values[8]
 		transaction.Id = uuidGenerator()
 		transaction.IsClosed = false
 		transactions = append(transactions, transaction)

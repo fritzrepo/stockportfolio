@@ -1,0 +1,15 @@
+[
+    {
+        "id": "00000000-0000-0000-0000-000000000004",
+        "sellTransactionId": "00000000-0000-0000-0000-000000000003",
+        "buyTransactionId": "00000000-0000-0000-0000-000000000001",
+        "asset": "Apple",
+        "amount": 95,
+        "isProfit": true,
+        "taxRate": 0.25,
+        "quantity": 10,
+        "buyPrice": 100.5,
+        "sellPrice": 110,
+        "Currency": "EUR"
+    }
+]

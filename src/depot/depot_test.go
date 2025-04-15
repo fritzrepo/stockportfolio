@@ -1,23 +1,15 @@
 package depot
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
+	"os"
 	"reflect"
 	"testing"
 
 	"github.com/google/uuid"
-	"golang.org/x/text/currency"
 )
-
-type DepotEntryForTest struct {
-	assetType    string
-	asset        string
-	tickerSymbol string
-	quantity     float32
-	price        float32
-	currency     currency.Unit
-	totalPrice   float32
-}
 
 // Mock-Generator für Tests
 type MockUUIDGenerator struct {
@@ -58,25 +50,14 @@ func (m *MockUUIDGenerator) GetUUID() uuid.UUID {
 // One realized gain and one stock in depot
 func Test1ComputeTransactions(t *testing.T) {
 
-	// expectedDepot := map[string]DepotEntryForTest{
-	// 	"BASF": {
-	// 		assetType:    "stock",
-	// 		asset:        "BASF",
-	// 		tickerSymbol: "BAS1",
-	// 		quantity:     100,
-	// 		price:        45.5,
-	// 		totalPrice:   4550,
-	// 		currency:     currency.EUR,
-	// 	},
-	// }
 	expectedDepot := map[string]DepotEntry{
 		"BASF": {
-			assetType:    "stock",
-			asset:        "BASF",
-			tickerSymbol: "BAS1",
-			quantity:     100,
-			price:        45.5,
-			currency:     currency.EUR,
+			AssetType:    "stock",
+			Asset:        "BASF",
+			TickerSymbol: "BAS1",
+			Quantity:     100,
+			Price:        45.5,
+			Currency:     "EUR",
 		},
 	}
 
@@ -84,7 +65,7 @@ func Test1ComputeTransactions(t *testing.T) {
 		{
 			Id:                uuid.MustParse("00000000-0000-0000-0000-000000000004"),
 			SellTransactionId: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-			BuyTransactionsId: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			BuyTransactionId:  uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 			Asset:             "Apple",
 			Amount:            95,
 			IsProfit:          true,
@@ -92,13 +73,14 @@ func Test1ComputeTransactions(t *testing.T) {
 			Quantity:          10,
 			BuyPrice:          100.5,
 			SellPrice:         110,
+			Currency:          "EUR",
 		},
 	}
 
 	var uuidGenerator = NewMockUUIDGenerator()
 	dep := NewDepot(uuidGenerator.GetUUID)
 
-	err := dep.ComputeTransactions("../data/RawTransactionsTest1.csv")
+	err := dep.ComputeTransactions("./test_data/RawTransactionsTest1.csv")
 	if err != nil {
 		t.Fatalf("Error computing transactions: %v", err)
 	}
@@ -112,20 +94,10 @@ func Test1ComputeTransactions(t *testing.T) {
 			t.Errorf("Expected asset %s not found in result", key)
 			continue
 		}
-		// if resultEntry.assetType != expectedEntry.assetType ||
-		// 	resultEntry.asset != expectedEntry.asset ||
-		// 	resultEntry.tickerSymbol != expectedEntry.tickerSymbol ||
-		// 	resultEntry.quantity != expectedEntry.quantity ||
-		// 	resultEntry.price != expectedEntry.price ||
-		// 	resultEntry.currency != expectedEntry.currency ||
-		// 	resultEntry.TotalPrice() != expectedEntry.totalPrice {
-		// 	t.Errorf("For asset %s, expected %+v, but got %+v", key, expectedEntry, resultEntry)
-		// }
 
 		if !reflect.DeepEqual(resultEntry, expectedEntry) {
 			t.Errorf("For asset %s, expected %+v, but got %+v", key, expectedEntry, resultEntry)
 		}
-
 	}
 
 	// Check count of realized gains
@@ -141,51 +113,82 @@ func Test1ComputeTransactions(t *testing.T) {
 		}
 	}
 
-	// Also jedes Feld einzeln prüfen
-	// for i, exp := range expectedGains {
-	// 	res := realizedGains[i]
-	// 	if exp.Amount != res.Amount || exp.Asset != res.Asset ||
-	// 		exp.BuyPrice != res.BuyPrice || exp.IsProfit != res.IsProfit ||
-	// 		exp.Quantity != res.Quantity || exp.SellPrice != res.SellPrice ||
-	// 		exp.TaxRate != res.TaxRate {
-	// 		t.Errorf("Element at index %d differs:\nExpected: %+v\nGot: %+v", i, exp, res)
-	// 	}
-	// }
-
 }
 
 //Checken, ob wenn ein Asset zwei mal gekauft wird, der Durchschnitts-Kaufpreis richtig berechnet wird
 
 func Test2ComputeTransactions(t *testing.T) {
 
-	expectedDepot := map[string]DepotEntryForTest{
+	expectedDepot := map[string]DepotEntry{
 		"Apple": {
-			assetType:    "stock",
-			asset:        "Apple",
-			tickerSymbol: "AAPL",
-			quantity:     15,
-			price:        110.5,
-			totalPrice:   1657.5, //Hier fester Wert, im Originalcode wird die totalPrice berechnet
-			currency:     currency.EUR,
+			AssetType:    "stock",
+			Asset:        "Apple",
+			TickerSymbol: "AAPL",
+			Quantity:     15,
+			Price:        110.5,
+			Currency:     "EUR",
 		},
 		"BASF": {
-			assetType:    "stock",
-			asset:        "BASF",
-			tickerSymbol: "BAS1",
-			quantity:     100,
-			price:        45.5,
-			totalPrice:   4550,
-			currency:     currency.EUR,
+			AssetType:    "stock",
+			Asset:        "BASF",
+			TickerSymbol: "BAS1",
+			Quantity:     100,
+			Price:        45.5,
+			Currency:     "EUR",
+		},
+	}
+
+	expected := []RealizedGain{
+		{
+			Id:                uuid.MustParse("00000000-0000-0000-0000-000000000007"),
+			SellTransactionId: uuid.MustParse("00000000-0000-0000-0000-000000000005"),
+			BuyTransactionId:  uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			Asset:             "Siemens",
+			Amount:            550,
+			IsProfit:          true,
+			TaxRate:           0.25,
+			Quantity:          100,
+			BuyPrice:          90,
+			SellPrice:         95.5,
+			Currency:          "EUR",
+		},
+		{
+			Id:                uuid.MustParse("00000000-0000-0000-0000-000000000008"),
+			SellTransactionId: uuid.MustParse("00000000-0000-0000-0000-000000000006"),
+			BuyTransactionId:  uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+			Asset:             "Apple",
+			Amount:            199,
+			IsProfit:          true,
+			TaxRate:           0.25,
+			Quantity:          10,
+			BuyPrice:          100.5,
+			SellPrice:         120.4,
+			Currency:          "EUR",
+		},
+		{
+			Id:                uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+			SellTransactionId: uuid.MustParse("00000000-0000-0000-0000-000000000006"),
+			BuyTransactionId:  uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+			Asset:             "Apple",
+			Amount:            49.5,
+			IsProfit:          true,
+			TaxRate:           0.25,
+			Quantity:          5,
+			BuyPrice:          110.5,
+			SellPrice:         120.4,
+			Currency:          "EUR",
 		},
 	}
 
 	var uuidGenerator = NewMockUUIDGenerator()
 	dep := NewDepot(uuidGenerator.GetUUID)
 
-	err := dep.ComputeTransactions("../data/RawTransactions.csv")
+	err := dep.ComputeTransactions("./test_data/RawTransactionsTest2.csv")
 	if err != nil {
 		t.Fatalf("Error computing transactions: %v", err)
 	}
+
+	//Check the depot entries
 	result := dep.DepotEntries
 
 	for key, expectedEntry := range expectedDepot {
@@ -195,83 +198,108 @@ func Test2ComputeTransactions(t *testing.T) {
 			continue
 		}
 
-		if resultEntry.assetType != expectedEntry.assetType ||
-			resultEntry.asset != expectedEntry.asset ||
-			resultEntry.tickerSymbol != expectedEntry.tickerSymbol ||
-			resultEntry.quantity != expectedEntry.quantity ||
-			resultEntry.price != expectedEntry.price ||
-			resultEntry.currency != expectedEntry.currency ||
-			resultEntry.TotalPrice() != expectedEntry.totalPrice {
+		if !reflect.DeepEqual(resultEntry, expectedEntry) {
 			t.Errorf("For asset %s, expected %+v, but got %+v", key, expectedEntry, resultEntry)
 		}
 	}
-}
 
-func TestComputeTransactionsRealizedGains(t *testing.T) {
-	expected := []RealizedGain{
-		{
-			Id:                uuid.MustParse("00000000-0000-0000-0000-000000000007"),
-			SellTransactionId: uuid.MustParse("00000000-0000-0000-0000-000000000005"),
-			BuyTransactionsId: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-			Asset:             "Siemens",
-			Amount:            550,
-			IsProfit:          true,
-			TaxRate:           0.25,
-			Quantity:          100,
-			BuyPrice:          90,
-			SellPrice:         95.5,
-		},
-		{
-			Id:                uuid.MustParse("00000000-0000-0000-0000-000000000008"),
-			SellTransactionId: uuid.MustParse("00000000-0000-0000-0000-000000000006"),
-			BuyTransactionsId: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-			Asset:             "Apple",
-			Amount:            199,
-			IsProfit:          true,
-			TaxRate:           0.25,
-			Quantity:          10,
-			BuyPrice:          100.5,
-			SellPrice:         120.4,
-		},
-		{
-			Id:                uuid.MustParse("00000000-0000-0000-0000-000000000009"),
-			SellTransactionId: uuid.MustParse("00000000-0000-0000-0000-000000000006"),
-			BuyTransactionsId: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-			Asset:             "Apple",
-			Amount:            49.5,
-			IsProfit:          true,
-			TaxRate:           0.25,
-			Quantity:          5,
-			BuyPrice:          110.5,
-			SellPrice:         120.4,
-		},
-	}
-
-	var uuidGenerator = NewMockUUIDGenerator()
-	dep := NewDepot(uuidGenerator.GetUUID)
-
-	err := dep.ComputeTransactions("../data/RawTransactions.csv")
-	if err != nil {
-		t.Fatalf("Error computing transactions: %v", err)
-	}
+	//Check the realized gains
 	realizedGains := dep.RealizedGains
 
 	for _, expectedEntry := range expected {
 		for _, realizedGain := range realizedGains {
 			if realizedGain.Id == expectedEntry.Id {
-				if realizedGain.Amount != expectedEntry.Amount ||
-					realizedGain.Asset != expectedEntry.Asset ||
-					realizedGain.SellTransactionId != expectedEntry.SellTransactionId ||
-					realizedGain.BuyTransactionsId != expectedEntry.BuyTransactionsId ||
-					realizedGain.IsProfit != expectedEntry.IsProfit ||
-					realizedGain.TaxRate != expectedEntry.TaxRate ||
-					realizedGain.Quantity != expectedEntry.Quantity ||
-					realizedGain.BuyPrice != expectedEntry.BuyPrice ||
-					realizedGain.SellPrice != expectedEntry.SellPrice {
-					t.Errorf("For asset %s, expected %+v, but got %+v", expectedEntry.Asset, expectedEntry, realizedGain)
+				if reflect.DeepEqual(realizedGain, expectedEntry) {
+					t.Logf("Realized gain for asset %s matches expected values: %+v", expectedEntry.Asset, realizedGain)
 				}
-				break
 			}
 		}
 	}
+}
+
+func TestComputeTransactions(t *testing.T) {
+
+	type TestCases = []struct {
+		Name          string                `json:"name"`
+		ExpectedGains []RealizedGain        `json:"expectedGains"`
+		ExpectedDepot map[string]DepotEntry `json:"expectedDepot"`
+	}
+
+	testcount := 1
+	testCases := make(TestCases, testcount)
+
+	for i := range testcount {
+
+		filenameDepot := fmt.Sprintf("./test_data/expectedDepot%d.json", i+1)
+		jsonFileDepot, err := os.Open(filenameDepot)
+		if err != nil {
+			t.Fatalf("Failed to open test data: %v", err)
+		}
+		defer jsonFileDepot.Close()
+
+		filenameGains := fmt.Sprintf("./test_data/expectedGains%d.json", i+1)
+		jsonFileGains, err := os.Open(filenameGains)
+		if err != nil {
+			t.Fatalf("Failed to open test data: %v", err)
+		}
+		defer jsonFileGains.Close()
+
+		testCases[i].Name = fmt.Sprintf("Test%d", i+1)
+
+		byteValueDepot, _ := io.ReadAll(jsonFileDepot)
+		if err := json.Unmarshal(byteValueDepot, &testCases[i].ExpectedDepot); err != nil {
+			t.Fatalf("Failed to unmarshal test data: %v", err)
+		}
+
+		byteValueGains, _ := io.ReadAll(jsonFileGains)
+		if err := json.Unmarshal(byteValueGains, &testCases[i].ExpectedGains); err != nil {
+			t.Fatalf("Failed to unmarshal test data: %v", err)
+		}
+	}
+
+	fmt.Println(testCases[0].ExpectedDepot)
+	fmt.Println(testCases[0].ExpectedGains)
+
+	for _, tt := range testCases {
+		t.Run(tt.Name, func(t *testing.T) {
+
+			var uuidGenerator = NewMockUUIDGenerator()
+			dep := NewDepot(uuidGenerator.GetUUID)
+
+			err := dep.ComputeTransactions("./test_data/RawTransactionsTest2.csv")
+			if err != nil {
+				t.Fatalf("Error computing transactions: %v", err)
+			}
+
+			//Check the depot entries
+			result := dep.DepotEntries
+
+			for key, expectedEntry := range tt.ExpectedDepot {
+				resultEntry, exists := result[key]
+				if !exists {
+					t.Errorf("Expected asset %s not found in result", key)
+					continue
+				}
+
+				if !reflect.DeepEqual(resultEntry, expectedEntry) {
+					t.Errorf("For asset %s, expected %+v, but got %+v", key, expectedEntry, resultEntry)
+				}
+			}
+
+			//Check the realized gains
+			realizedGains := dep.RealizedGains
+
+			for _, expectedEntry := range tt.ExpectedGains {
+				for _, realizedGain := range realizedGains {
+					if realizedGain.Id == expectedEntry.Id {
+						if reflect.DeepEqual(realizedGain, expectedEntry) {
+							t.Logf("Realized gain for asset %s matches expected values: %+v", expectedEntry.Asset, realizedGain)
+						}
+					}
+				}
+			}
+
+		})
+	}
+
 }

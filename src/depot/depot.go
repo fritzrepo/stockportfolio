@@ -6,27 +6,26 @@ import (
 	"github.com/fritzrepo/stockportfolio/depot/importer"
 	"github.com/fritzrepo/stockportfolio/models"
 	"github.com/google/uuid"
-	"golang.org/x/text/currency"
 )
 
 type DepotEntry struct {
-	assetType    string
-	asset        string
-	tickerSymbol string
-	quantity     float32
-	price        float32 //Kann ein Durchschnittspreis sein, wenn mehrere Transaktionen vorhanden sind
-	currency     currency.Unit
+	AssetType    string  `json:"assetType"` //stock, crypto, forex
+	Asset        string  `json:"asset"`     //Name des Assets
+	TickerSymbol string  `json:"tickerSymbol"`
+	Quantity     float32 `json:"quantity"` //Anzahl der Assets
+	Price        float32 `json:"price"`    //Preis des Assets
+	Currency     string  `json:"currency"` //Währung des Assets currency.Unit ist zu speziell für json und db.
 }
 
 // TotalPrice berechnet und gibt den gesamt Ankaufspreis zurück
 func (d *DepotEntry) TotalPrice() float32 {
-	return d.quantity * d.price
+	return d.Quantity * d.Price
 }
 
 type RealizedGain struct {
-	Id                uuid.UUID // ID der Realisierung
-	SellTransactionId uuid.UUID // ID der Verkaufstransaktion
-	BuyTransactionsId uuid.UUID // ID der Kauftransaktion
+	Id                uuid.UUID `json:"id"`                // ID der Realisierung
+	SellTransactionId uuid.UUID `json:"sellTransactionId"` // ID der Verkaufstransaktion
+	BuyTransactionId  uuid.UUID `json:"buytransactionId"`  // ID der Kauftransaktion
 	Asset             string    // Asset-Name
 	Amount            float32   // Der Gewinn/Verlust-Betrag
 	IsProfit          bool      // true für Gewinn, false für Verlust
@@ -34,6 +33,7 @@ type RealizedGain struct {
 	Quantity          float32
 	BuyPrice          float32
 	SellPrice         float32
+	Currency          string
 }
 
 type Depot struct {
@@ -169,12 +169,12 @@ func (d *Depot) ComputeTransactions(filePath string) error {
 			//Wenn das Asset noch nicht im Depot ist, dann füge es hinzu
 			entry, exists := depotEntries[transaction.Asset]
 			if !exists {
-				depotEntries[transaction.Asset] = DepotEntry{assetType: transaction.AssetType, asset: transaction.Asset,
-					tickerSymbol: transaction.TickerSymbol, quantity: transaction.Quantity, price: transaction.Price,
-					currency: transaction.Currency}
+				depotEntries[transaction.Asset] = DepotEntry{AssetType: transaction.AssetType, Asset: transaction.Asset,
+					TickerSymbol: transaction.TickerSymbol, Quantity: transaction.Quantity, Price: transaction.Price,
+					Currency: transaction.Currency}
 			} else {
 				//Wenn das Asset schon im Depot ist, dann aktualisiere die Anzahl und den Preis
-				entry.quantity += transaction.Quantity
+				entry.Quantity += transaction.Quantity
 				depotEntries[transaction.Asset] = entry
 			}
 		}

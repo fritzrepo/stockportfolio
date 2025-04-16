@@ -56,8 +56,6 @@ func (d *Depot) ComputeTransactions(filePath string) error {
 
 	for _, newTransaction := range transactions {
 
-		//fmt.Println(newTransaction.Asset, newTransaction.TransactionType, newTransaction.Id)
-
 		//Handle die Asset-Transaktionen
 		//Add buy transaction to unclosed transactionsavailableBuytrans
 		if newTransaction.TransactionType == "buy" {
@@ -87,7 +85,6 @@ func (d *Depot) ComputeTransactions(filePath string) error {
 				modifyTransactions := make([]models.Transaction, len(transactions))
 
 				_ = copy(modifyTransactions, transactions)
-				//fmt.Println("Anzahl der kopierten Transaktionen: ", count)
 
 				for _, availableBuyTrans := range transactions {
 					if availableBuyTrans.TransactionType == "buy" {
@@ -112,7 +109,6 @@ func (d *Depot) ComputeTransactions(filePath string) error {
 							realizedGains = append(realizedGains, calculateProfitLoss(d.uuidGenerator, newTransaction, availableBuyTrans))
 							//Buy Transaktion verkleinern um die Anzahl der verkauften Assets
 							availableBuyTrans.Quantity -= newTransaction.Quantity
-
 							//Suche in den modifyTransactions die Transaktion
 							for i, transaction := range modifyTransactions {
 								if transaction.Id == availableBuyTrans.Id {
@@ -173,7 +169,7 @@ func (d *Depot) ComputeTransactions(filePath string) error {
 					TickerSymbol: transaction.TickerSymbol, Quantity: transaction.Quantity, Price: transaction.Price,
 					Currency: transaction.Currency}
 			} else {
-				//Wenn das Asset schon im Depot ist, dann aktualisiere die Anzahl und den Preis
+				//Wenn das Asset schon im Depot ist, dann aktualisiere den (durchschnitts) Preis und die Anzahl
 				entry.Price = (entry.Price*entry.Quantity + transaction.Price*transaction.Quantity) / (entry.Quantity + transaction.Quantity)
 				entry.Quantity += transaction.Quantity
 				depotEntries[transaction.Asset] = entry
@@ -185,10 +181,6 @@ func (d *Depot) ComputeTransactions(filePath string) error {
 	d.DepotEntries = depotEntries
 	d.RealizedGains = realizedGains
 
-	//fmt.Println(depot)
-	//fmt.Println(("Abgeschlossene Transaktionen"))
-	//fmt.Println(realizedGains)
-	//fmt.Println(transactions[0].Date.Format("2006-01-02"))
 	return nil
 }
 

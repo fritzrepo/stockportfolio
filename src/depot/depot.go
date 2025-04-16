@@ -174,6 +174,7 @@ func (d *Depot) ComputeTransactions(filePath string) error {
 					Currency: transaction.Currency}
 			} else {
 				//Wenn das Asset schon im Depot ist, dann aktualisiere die Anzahl und den Preis
+				entry.Price = (entry.Price*entry.Quantity + transaction.Price*transaction.Quantity) / (entry.Quantity + transaction.Quantity)
 				entry.Quantity += transaction.Quantity
 				depotEntries[transaction.Asset] = entry
 			}

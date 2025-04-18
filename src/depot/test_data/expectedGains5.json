@@ -1,0 +1,67 @@
+[
+    {
+        "id": "00000000-0000-0000-0000-000000000007",
+        "sellTransactionId": "00000000-0000-0000-0000-000000000007",
+        "buyTransactionId": "00000000-0000-0000-0000-000000000001",
+        "asset": "Apple",
+        "amount": 145,
+        "isProfit": true,
+        "taxRate": 0.25,
+        "quantity": 10,
+        "buyPrice": 100.5,
+        "sellPrice": 115,
+        "Currency": "EUR"
+    },
+    {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "sellTransactionId": "00000000-0000-0000-0000-000000000007",
+        "buyTransactionId": "00000000-0000-0000-0000-000000000002",
+        "asset": "Apple",
+        "amount": 90,
+        "isProfit": true,
+        "taxRate": 0.25,
+        "quantity": 20,
+        "buyPrice": 110.5,
+        "sellPrice": 115,
+        "Currency": "EUR"
+    },
+    {
+        "id": "00000000-0000-0000-0000-000000000009",
+        "sellTransactionId": "00000000-0000-0000-0000-000000000007",
+        "buyTransactionId": "00000000-0000-0000-0000-000000000004",
+        "asset": "Apple",
+        "amount": 50,
+        "isProfit": true,
+        "taxRate": 0.25,
+        "quantity": 10,
+        "buyPrice": 120,
+        "sellPrice": 115,
+        "Currency": "EUR"
+    },    
+    {
+        "id": "00000000-0000-0000-0000-000000000010",
+        "sellTransactionId": "00000000-0000-0000-0000-000000000008",
+        "buyTransactionId": "00000000-0000-0000-0000-000000000003",
+        "asset": "BASF",
+        "amount": 650,
+        "isProfit": true,
+        "taxRate": 0.25,
+        "quantity": 100,
+        "buyPrice": 45.5,
+        "sellPrice": 52.0,
+        "Currency": "EUR"
+    },
+    {
+        "id": "00000000-0000-0000-0000-000000000011",
+        "sellTransactionId": "00000000-0000-0000-0000-000000000008",
+        "buyTransactionId": "00000000-0000-0000-0000-000000000005",
+        "asset": "BASF",
+        "amount": 200,
+        "isProfit": true,
+        "taxRate": 0.25,
+        "quantity": 100,
+        "buyPrice": 50,
+        "sellPrice": 52.0,
+        "Currency": "EUR"
+    }
+]

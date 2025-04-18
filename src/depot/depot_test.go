@@ -55,7 +55,7 @@ func TestComputeTransactions(t *testing.T) {
 		ExpectedDepot map[string]DepotEntry `json:"expectedDepot"`
 	}
 
-	testcount := 3
+	testcount := 5
 	testCases := make(TestCases, testcount)
 
 	for i := range testcount {

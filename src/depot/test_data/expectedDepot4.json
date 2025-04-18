@@ -11,8 +11,8 @@
         "AssetType": "stock",
         "Asset": "Apple",
         "TickerSymbol": "AAPL",
-        "Quantity": 5,
-        "Price": 100.5,
+        "Quantity": 15,
+        "Price": 110.5,
         "Currency": "EUR"
     }
 }

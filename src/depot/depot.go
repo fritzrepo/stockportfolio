@@ -81,7 +81,6 @@ func (d *Depot) ComputeTransactions(filePath string) error {
 				//Ziehe die Anzahl der verkauften Assets von der ersten buy Transaktion ab.
 				//Sollten mehr Assets verkauft werden, als gekauft wurden, dann wird
 				//die nächste buy Transaktion verwendet.
-				//Code wurde erstellt
 				modifyTransactions := make([]models.Transaction, len(transactions))
 
 				_ = copy(modifyTransactions, transactions)
@@ -133,13 +132,12 @@ func (d *Depot) ComputeTransactions(filePath string) error {
 								}
 							}
 							modifyTransactions = filteredTransactions
-
 							//Der Rest der Sell transaction muss auf die nächste buy transaction angewendet werden
 							//Daher kein break
 						}
 					} else {
-						//ToDo => Richtige Fehlermeldung implementieren
-						fmt.Println("Transaction is not a buy transaction")
+						//ToDo => Richtige Fehlermeldung / Fehlerbehandlung implementieren
+						fmt.Printf("Transaction is not a buy transaction %s\n", newTransaction.Asset)
 					}
 				}
 				//Wennn die tansactions leer sind, dann lösche den Eintrag
@@ -153,8 +151,8 @@ func (d *Depot) ComputeTransactions(filePath string) error {
 				//Durchschnittskostenmethode (average cost)
 				//ToDo => Implementieren
 			} else {
-				//ToDo => Richtige Fehlermeldung implementieren
-				fmt.Println("Asset not found in	depot")
+				//ToDo => Richtige Fehlermeldung / Fehlerbehandlung implementieren
+				fmt.Printf("No buy transaction available for this sell transaction %s\n", newTransaction.Asset)
 			}
 		}
 	}

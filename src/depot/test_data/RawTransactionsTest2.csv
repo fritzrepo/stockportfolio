@@ -1,6 +1,3 @@
-12.10.2024;buy;stock;Siemens;SIEM;100;90;4;EUR
 01.10.2025;buy;stock;Apple;AAPL;10;100.5;4;EUR
-02.11.2025;buy;stock;Apple;AAPL;20;110.5;4;EUR
 05.11.2025;buy;stock;BASF;BAS1;100;45.5;5;EUR
-12.10.2024;sell;stock;Siemens;SIEM;100;95.5;4;EUR
-07.10.2025;sell;stock;Apple;AAPL;15;120.4;4;EUR
+07.10.2025;sell;stock;Apple;AAPL;5;90;4;EUR

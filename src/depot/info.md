@@ -29,8 +29,5 @@ Drei mögliche Abrechnungen gibt es dann:
 - Erstellt für jede und jede angefangene Buy-Transaktion eine Abrechnung
 
 
-Noch zumachen:
-Die UUID von realizedGains kann wenn die Tests auch ohne sie möglich sind entfernt werden.
+Noch zu tun:
 Test erstellen von einfachen realisierten Transanktionen und Depoteinträgen bis zu komplizierten Kauf- und Verkauftransaktionen.
-Weil totalPrice berechnet wird, diese im Unit test gesondert überprüfen oder bleiben lassen.
-Price in Depot kann ein Durchschnittspreis sein. Dies ist zu testen.

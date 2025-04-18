@@ -3,13 +3,13 @@ package main
 import (
 	"fmt"
 
-	"github.com/fritzrepo/stockportfolio/config"
-	"github.com/fritzrepo/stockportfolio/depot"
+	"github.com/fritzrepo/stockportfolio/internal/config"
+	"github.com/fritzrepo/stockportfolio/internal/depot"
 	"github.com/google/uuid"
 )
 
 func main() {
-	config, err := config.LoadConfigFromJSON("appConfig.json")
+	config, err := config.LoadConfigFromJSON("../../configs/appConfig.json")
 	if err != nil {
 		// Fehlerbehandlung
 		fmt.Println("Error loading config")

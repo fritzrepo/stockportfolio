@@ -60,14 +60,14 @@ func TestComputeTransactions(t *testing.T) {
 
 	for i := range testcount {
 
-		filenameDepot := fmt.Sprintf("./test_data/expectedDepot%d.json", i+1)
+		filenameDepot := fmt.Sprintf("../../testdata/depot/expectedDepot%d.json", i+1)
 		jsonFileDepot, err := os.Open(filenameDepot)
 		if err != nil {
 			t.Fatalf("Failed to open test data: %v", err)
 		}
 		defer jsonFileDepot.Close()
 
-		filenameGains := fmt.Sprintf("./test_data/expectedGains%d.json", i+1)
+		filenameGains := fmt.Sprintf("../../testdata/depot/expectedGains%d.json", i+1)
 		jsonFileGains, err := os.Open(filenameGains)
 		if err != nil {
 			t.Fatalf("Failed to open test data: %v", err)
@@ -94,7 +94,7 @@ func TestComputeTransactions(t *testing.T) {
 			var uuidGenerator = NewMockUUIDGenerator()
 			dep := NewDepot(uuidGenerator.GetUUID)
 
-			filenameTrans := fmt.Sprintf("./test_data/RawTransactionsTest%d.csv", i)
+			filenameTrans := fmt.Sprintf("../../testdata/depot/RawTransactionsTest%d.csv", i)
 			i = i + 1
 
 			err := dep.ComputeTransactions(filenameTrans)

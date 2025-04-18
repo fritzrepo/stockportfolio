@@ -27,7 +27,3 @@ Drei mögliche Abrechnungen gibt es dann:
 - Erste unclosed transaction behandeln wie in "Anzahl der Assets ist gleich".
 - Mit den restlichen sell Assets wieder von vorne anfangen.
 - Erstellt für jede und jede angefangene Buy-Transaktion eine Abrechnung
-
-
-Noch zu tun:
-Test erstellen von einfachen realisierten Transanktionen und Depoteinträgen bis zu komplizierten Kauf- und Verkauftransaktionen.

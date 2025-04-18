@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fritzrepo/stockportfolio/models"
+	"github.com/fritzrepo/stockportfolio/internal/depot/models"
 	"github.com/google/uuid"
 )
 

@@ -3,8 +3,8 @@ package depot
 import (
 	"fmt"
 
-	"github.com/fritzrepo/stockportfolio/depot/importer"
-	"github.com/fritzrepo/stockportfolio/models"
+	"github.com/fritzrepo/stockportfolio/internal/depot/importer"
+	"github.com/fritzrepo/stockportfolio/internal/depot/models"
 	"github.com/google/uuid"
 )
 

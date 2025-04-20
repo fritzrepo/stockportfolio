@@ -1,11 +1,11 @@
 package depot
 
 import (
-	"github.com/fritzrepo/stockportfolio/internal/depot/models"
+	"github.com/fritzrepo/stockportfolio/internal/storage"
 	"github.com/google/uuid"
 )
 
-func calculateProfitLoss(uuidGenerator func() uuid.UUID, sellTrans models.Transaction, buyTransaction models.Transaction) RealizedGain {
+func calculateProfitLoss(uuidGenerator func() uuid.UUID, sellTrans storage.Transaction, buyTransaction storage.Transaction) RealizedGain {
 	result := RealizedGain{}
 	result.Id = uuidGenerator()
 	result.SellTransactionId = sellTrans.Id

@@ -3,8 +3,7 @@ package depot
 import (
 	"fmt"
 
-	"github.com/fritzrepo/stockportfolio/internal/depot/importer"
-	"github.com/fritzrepo/stockportfolio/internal/depot/models"
+	"github.com/fritzrepo/stockportfolio/internal/storage"
 	"github.com/google/uuid"
 )
 
@@ -39,18 +38,18 @@ type RealizedGain struct {
 type Depot struct {
 	DepotEntries         map[string]DepotEntry
 	RealizedGains        []RealizedGain
-	unclosedTransactions map[string][]models.Transaction
+	unclosedTransactions map[string][]storage.Transaction
 	uuidGenerator        func() uuid.UUID
 }
 
 func (d *Depot) ComputeTransactions(filePath string) error {
 
-	transactions, err := importer.LoadTransactions(filePath, d.uuidGenerator)
+	transactions, err := storage.LoadTransactionsCsv(filePath, d.uuidGenerator)
 	if err != nil {
 		return err
 	}
 
-	unclosedTransactions := make(map[string][]models.Transaction)
+	unclosedTransactions := make(map[string][]storage.Transaction)
 	depotEntries := make(map[string]DepotEntry)
 	realizedGains := make([]RealizedGain, 0, 5)
 
@@ -66,7 +65,7 @@ func (d *Depot) ComputeTransactions(filePath string) error {
 				unclosedTransactions[newTransaction.Asset] = availableBuyTrans
 			} else {
 				//Gibt es noch keine Transaktionen für das Asset? Dann erstelle einen neuen Slice mit der Transaktion.
-				unclosedTransaction := []models.Transaction{}
+				unclosedTransaction := []storage.Transaction{}
 				unclosedTransaction = append(unclosedTransaction, newTransaction)
 				unclosedTransactions[newTransaction.Asset] = unclosedTransaction
 			}
@@ -81,7 +80,7 @@ func (d *Depot) ComputeTransactions(filePath string) error {
 				//Ziehe die Anzahl der verkauften Assets von der ersten buy Transaktion ab.
 				//Sollten mehr Assets verkauft werden, als gekauft wurden, dann wird
 				//die nächste buy Transaktion verwendet.
-				modifyTransactions := make([]models.Transaction, len(transactions))
+				modifyTransactions := make([]storage.Transaction, len(transactions))
 
 				_ = copy(modifyTransactions, transactions)
 
@@ -90,7 +89,7 @@ func (d *Depot) ComputeTransactions(filePath string) error {
 						//Buy und sell Transaktionen sind gleich
 						if availableBuyTrans.Quantity == newTransaction.Quantity {
 							//Entferne die Transaktion aus der modifyTransactions
-							filteredTransactions := []models.Transaction{}
+							filteredTransactions := []storage.Transaction{}
 							for _, transaction := range modifyTransactions {
 								if transaction.Id != availableBuyTrans.Id {
 									filteredTransactions = append(filteredTransactions, transaction)
@@ -125,7 +124,7 @@ func (d *Depot) ComputeTransactions(filePath string) error {
 							newTransaction.Quantity -= availableBuyTrans.Quantity
 
 							//Entferne die Transaktion aus der modifyTransactions
-							filteredTransactions := []models.Transaction{}
+							filteredTransactions := []storage.Transaction{}
 							for _, transaction := range modifyTransactions {
 								if transaction.Id != availableBuyTrans.Id {
 									filteredTransactions = append(filteredTransactions, transaction)
@@ -186,7 +185,7 @@ func NewDepot(uuidGen func() uuid.UUID) Depot {
 	return Depot{
 		DepotEntries:         make(map[string]DepotEntry),
 		RealizedGains:        make([]RealizedGain, 0, 5),
-		unclosedTransactions: make(map[string][]models.Transaction),
+		unclosedTransactions: make(map[string][]storage.Transaction),
 		uuidGenerator:        uuidGen,
 	}
 }

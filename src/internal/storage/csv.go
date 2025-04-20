@@ -1,4 +1,4 @@
-package importer
+package storage
 
 import (
 	"bufio"
@@ -7,20 +7,19 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fritzrepo/stockportfolio/internal/depot/models"
 	"github.com/google/uuid"
 )
 
-func LoadTransactions(filename string, uuidGenerator func() uuid.UUID) ([]models.Transaction, error) {
+func LoadTransactionsCsv(filename string, uuidGenerator func() uuid.UUID) ([]Transaction, error) {
 	lines, err := loadFile(filename)
 	if err != nil {
 		return nil, err
 	}
-	transactions := make([]models.Transaction, 0, len(lines))
+	transactions := make([]Transaction, 0, len(lines))
 	for _, line := range lines {
 		// Parse line
 		values := strings.Split(line, ";")
-		transaction := models.Transaction{}
+		transaction := Transaction{}
 		parsedDate, err := time.Parse("02.01.2006", values[0]) // Adjust the format as per your date format
 		if err != nil {
 			return nil, err

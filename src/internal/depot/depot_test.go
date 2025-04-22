@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/fritzrepo/stockportfolio/internal/storage"
 	"github.com/google/uuid"
 )
 
@@ -92,12 +93,13 @@ func TestComputeTransactions(t *testing.T) {
 		t.Run(tt.Name, func(t *testing.T) {
 
 			var uuidGenerator = NewMockUUIDGenerator()
-			dep := NewDepot(uuidGenerator.GetUUID)
-
 			filenameTrans := fmt.Sprintf("../../testdata/depot/RawTransactionsTest%d.csv", i)
 			i = i + 1
 
-			err := dep.ComputeTransactions(filenameTrans)
+			store := storage.NewCsvStorage(filenameTrans, uuidGenerator.GetUUID)
+			dep := NewDepot(uuidGenerator.GetUUID, &store)
+
+			err := dep.ComputeTransactions()
 			if err != nil {
 				t.Fatalf("Error computing transactions: %v", err)
 			}

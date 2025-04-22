@@ -10,8 +10,13 @@ import (
 	"github.com/google/uuid"
 )
 
-func LoadTransactionsCsv(filename string, uuidGenerator func() uuid.UUID) ([]Transaction, error) {
-	lines, err := loadFile(filename)
+type CsvStorage struct {
+	filePath      string
+	uuidGenerator func() uuid.UUID
+}
+
+func (s *CsvStorage) LoadAllTransactions() ([]Transaction, error) {
+	lines, err := loadFile(s.filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +54,7 @@ func LoadTransactionsCsv(filename string, uuidGenerator func() uuid.UUID) ([]Tra
 		// 	return nil, err
 		// }
 		transaction.Currency = values[8]
-		transaction.Id = uuidGenerator()
+		transaction.Id = s.uuidGenerator()
 		transaction.IsClosed = false
 		transactions = append(transactions, transaction)
 	}
@@ -74,4 +79,11 @@ func loadFile(filename string) ([]string, error) {
 	}
 
 	return lines, nil
+}
+
+func NewCsvStorage(pathToFile string, uuidGen func() uuid.UUID) CsvStorage {
+	return CsvStorage{
+		uuidGenerator: uuidGen,
+		filePath:      pathToFile,
+	}
 }

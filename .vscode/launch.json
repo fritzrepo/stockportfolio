@@ -17,7 +17,13 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}/src/cmd/cli/main.go",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/src/cmd/cli",
+            "args": [
+                //"buildDb"
+                //"fillDb"
+                "compute"
+            ],
         },
         {
             "name": "Launch tui",

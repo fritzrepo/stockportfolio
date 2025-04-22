@@ -9,7 +9,7 @@ import (
 type Transaction struct {
 	Id              uuid.UUID
 	Date            time.Time
-	TransactionType string // besser enum buy, sell
+	TransactionType string // buy, sell
 	IsClosed        bool
 	AssetType       string //stock, crypto, forex
 	Asset           string

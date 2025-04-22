@@ -40,11 +40,12 @@ type Depot struct {
 	RealizedGains        []RealizedGain
 	unclosedTransactions map[string][]storage.Transaction
 	uuidGenerator        func() uuid.UUID
+	store                storage.Store
 }
 
-func (d *Depot) ComputeTransactions(filePath string) error {
+func (d *Depot) ComputeTransactions() error {
 
-	transactions, err := storage.LoadTransactionsCsv(filePath, d.uuidGenerator)
+	transactions, err := d.store.LoadAllTransactions()
 	if err != nil {
 		return err
 	}
@@ -181,11 +182,12 @@ func (d *Depot) ComputeTransactions(filePath string) error {
 	return nil
 }
 
-func NewDepot(uuidGen func() uuid.UUID) Depot {
+func NewDepot(uuidGen func() uuid.UUID, dataStore storage.Store) Depot {
 	return Depot{
 		DepotEntries:         make(map[string]DepotEntry),
 		RealizedGains:        make([]RealizedGain, 0, 5),
 		unclosedTransactions: make(map[string][]storage.Transaction),
 		uuidGenerator:        uuidGen,
+		store:                dataStore,
 	}
 }

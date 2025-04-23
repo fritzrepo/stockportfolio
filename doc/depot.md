@@ -27,3 +27,6 @@ Drei mögliche Abrechnungen gibt es dann:
 - Erste unclosed transaction behandeln wie in "Anzahl der Assets ist gleich".
 - Mit den restlichen sell Assets wieder von vorne anfangen.
 - Erstellt für jede und jede angefangene Buy-Transaktion eine Abrechnung
+
+## Abrechnungen (Realized Gains) und Depotbestand (unclosed transactions) berechnen
+Vor Nutzung des Programms können, wenn vorhanden, bereits getätigten Transaktionen importiert werden. Sollten Transaktionen importiert worden sein, so werden Gewinne / Verluste (Abrechnungen) und der Depotbestand berechnet. Die Abrechnungen und der Depotbestand muss danach persistiert werden, um bei einem Neustart, nicht die Berechnung wiederholen zu müssen. Wenn eine neue sell transaction hinzu kommt, wird die Abrechnung mit dieser und der passende(n) unclosed transaction(s) berechnet. Handelt es sich um eine buy transaction, so werden die unclosed transactions aktualisiert und somit der Depotbestand.

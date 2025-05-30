@@ -99,7 +99,7 @@ func TestComputeTransactions(t *testing.T) {
 			store := storage.NewCsvStorage(filenameTrans, uuidGenerator.GetUUID)
 			dep := NewDepot(uuidGenerator.GetUUID, &store)
 
-			err := dep.ComputeTransactions()
+			err := dep.ComputeAllTransactions()
 			if err != nil {
 				t.Fatalf("Error computing transactions: %v", err)
 			}

@@ -41,7 +41,12 @@ func main() {
 
 	if buildDb {
 		fmt.Println("Building database")
-		storage.CreateDatabase()
+		store := storage.GetFileDatabase(config.DatabaseFilePath, uuid.New)
+		err := store.CreateDatabase()
+		if err != nil {
+			fmt.Println("Database not created or already exists")
+			panic(err)
+		}
 		fmt.Println("Database created")
 	}
 
@@ -54,9 +59,16 @@ func main() {
 			fmt.Println("Error loading transactions")
 			panic(err)
 		}
+
+		dbStore := storage.GetFileDatabase(config.DatabaseFilePath, uuid.New)
+
 		for _, transaction := range transactions {
 			fmt.Println(transaction)
-			storage.InsertTransaction(&transaction)
+			err := dbStore.InsertTransaction(&transaction)
+			if err != nil {
+				fmt.Println("Database not created or already exists")
+				panic(err)
+			}
 			fmt.Println("Inserted transaction")
 		}
 	}
@@ -64,9 +76,16 @@ func main() {
 	if compute {
 		fmt.Println("Computing transactions")
 		store := storage.NewCsvStorage(config.TransactionFilePath, uuid.New)
+
+		// db, err := sql.Open("sqlite3", "../../data/depot.sqlite")
+		// if err != nil {
+		// 	log.Panic(err)
+		// }
+		// defer db.Close()
+
 		dep := depot.NewDepot(uuid.New, &store)
 
-		err = dep.ComputeTransactions()
+		err = dep.ComputeAllTransactions()
 		if err != nil {
 			// Fehlerbehandlung
 			fmt.Println("Error computing transactions")
@@ -77,6 +96,7 @@ func main() {
 		fmt.Println("Realized Gains:")
 		fmt.Println(dep.RealizedGains)
 		fmt.Println("End")
+
 	}
 
 }

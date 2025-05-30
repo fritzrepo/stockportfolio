@@ -7,6 +7,7 @@ import (
 
 type Config struct {
 	TransactionFilePath string `json:"transactionFilePath"`
+	DatabaseFilePath    string `json:"databaseFilePath"`
 }
 
 func LoadConfigFromJSON(filename string) (*Config, error) {

@@ -1,3 +1,4 @@
 {
-    "transactionFilePath": "../../data/RawTransactions.csv"
+    "transactionFilePath": "../../data/RawTransactions.csv",
+    "databaseFilePath": "../../data/depot.sqlite"
 }

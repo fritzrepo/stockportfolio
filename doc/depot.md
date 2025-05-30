@@ -2,7 +2,9 @@
 Jeder Kauf (buy) und Verkauf (sell) stellt eine Transaktion dar. Die Transaktionen werden in einer Liste in der Reihefolge ihres Auftretens gespeichert.
 
 ## Unclosed transactions:
-Sind Transaktionen die noch nicht abgerechnet sind. Bedeutet, das das Asset im Depot vorhanden ist. Die unclosed Transaktionen können nur vom Typ "buy" sein, da bei Verkaufs-Transaktionen "sell" die Abrechnung (Gewinn / Verlust) ausgelöst wird.
+Sind Transaktionen die noch nicht abgerechnet sind. Bedeutet, das das Asset im Depot vorhanden ist. Die unclosed Transaktionen können nur vom Typ "buy" sein, da bei Verkaufs-Transaktionen "sell" die Abrechnung (Gewinn / Verlust) ausgelöst wird. Mehrere unclosed transaction vom gleichen Asset bilden einen Depoteintrag.
+
+## Realized Gains
 Jede Abrechnung erzeugt einen "Realized Gains" (Gewinn / Verlust) Datensatz.
 
 ## Sell Transaktionen lösen eine Abrechnung aus
@@ -29,4 +31,4 @@ Drei mögliche Abrechnungen gibt es dann:
 - Erstellt für jede und jede angefangene Buy-Transaktion eine Abrechnung
 
 ## Abrechnungen (Realized Gains) und Depotbestand (unclosed transactions) berechnen
-Vor Nutzung des Programms können, wenn vorhanden, bereits getätigten Transaktionen importiert werden. Sollten Transaktionen importiert worden sein, so werden Gewinne / Verluste (Abrechnungen) und der Depotbestand berechnet. Die Abrechnungen und der Depotbestand muss danach persistiert werden, um bei einem Neustart, nicht die Berechnung wiederholen zu müssen. Wenn eine neue sell transaction hinzu kommt, wird die Abrechnung mit dieser und der passende(n) unclosed transaction(s) berechnet. Handelt es sich um eine buy transaction, so werden die unclosed transactions aktualisiert und somit der Depotbestand.
+Vor Nutzung des Programms können, wenn vorhanden, bereits getätigten Transaktionen importiert werden. Sollten Transaktionen importiert worden sein, so können Gewinne / Verluste (Abrechnungen) und der Depotbestand mit "ComputeAllTransactions" berechnet werden. Die Abrechnungen und der Depotbestand muss danach persistiert werden, um bei einem Neustart, nicht die Berechnung wiederholen zu müssen. Wenn eine neue sell Transaktion hinzu kommt, wird die Abrechnung mit dieser und der passende(n) unclosed transaction(s) berechnet. Handelt es sich um eine buy Transaktion, so werden die unclosed transactions aktualisiert. Bei jeder hinzugefügten Transaktion wird der Depotbestand aktualisiert.

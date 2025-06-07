@@ -81,7 +81,7 @@ func loadFile(filename string) ([]string, error) {
 	return lines, nil
 }
 
-func NewCsvStorage(pathToFile string, uuidGen func() uuid.UUID) CsvStorage {
+func GetCsvStorage(pathToFile string, uuidGen func() uuid.UUID) CsvStorage {
 	return CsvStorage{
 		uuidGenerator: uuidGen,
 		filePath:      pathToFile,

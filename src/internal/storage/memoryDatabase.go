@@ -20,7 +20,7 @@ func (s *MemoryDatabase) CreateDatabase() error {
 	return nil
 }
 
-func NewMemoryDatabase(uuidGen func() uuid.UUID) MemoryDatabase {
+func GetMemoryDatabase(uuidGen func() uuid.UUID) MemoryDatabase {
 	var memoryDB = MemoryDatabase{
 		db: nil,
 	}

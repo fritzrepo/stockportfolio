@@ -52,7 +52,7 @@ func main() {
 
 	if fillDb {
 		fmt.Println("Fill up database")
-		store := storage.NewCsvStorage(config.TransactionFilePath, uuid.New)
+		store := storage.GetCsvStorage(config.TransactionFilePath, uuid.New)
 		transactions, err := store.LoadAllTransactions()
 		if err != nil {
 			// Fehlerbehandlung
@@ -75,15 +75,9 @@ func main() {
 
 	if compute {
 		fmt.Println("Computing transactions")
-		store := storage.NewCsvStorage(config.TransactionFilePath, uuid.New)
+		store := storage.GetCsvStorage(config.TransactionFilePath, uuid.New)
 
-		// db, err := sql.Open("sqlite3", "../../data/depot.sqlite")
-		// if err != nil {
-		// 	log.Panic(err)
-		// }
-		// defer db.Close()
-
-		dep := depot.NewDepot(uuid.New, &store)
+		dep := depot.GetDepot(uuid.New, &store)
 
 		err = dep.ComputeAllTransactions()
 		if err != nil {

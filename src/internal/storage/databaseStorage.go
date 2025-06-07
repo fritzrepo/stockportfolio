@@ -2,6 +2,7 @@ package storage
 
 import (
 	"database/sql"
+	"fmt"
 
 	"github.com/google/uuid"
 )
@@ -12,17 +13,46 @@ type DatabaseStorage struct {
 
 func (s *DatabaseStorage) createDatabase(db *sql.DB) error {
 
-	sqlStmt := "CREATE TABLE transactions (id TEXT not null primary key, date DATETIME, transactionType TEXT, isClosed INTEGER, " +
-		"assetType TEXT, asset TEXT, tickerSymbol TEXT, quantity INTEGER, price INTEGER, fees REAL, currency TEXT);"
+	// Fremdschlüssel-Unterstützung aktivieren
+	sqlStmt := "PRAGMA foreign_keys = ON;"
 	_, err := db.Exec(sqlStmt)
 	if err != nil {
-		return err
+		return fmt.Errorf("error at enable foreign key support. %w", err)
+	}
+
+	// Create the transactions table
+	sqlStmt = "CREATE TABLE transactions (id TEXT not null primary key, date DATETIME, transactionType TEXT, isClosed INTEGER, " +
+		"assetType TEXT, asset TEXT, tickerSymbol TEXT, quantity INTEGER, price INTEGER, fees REAL, currency TEXT);"
+	_, err = db.Exec(sqlStmt)
+	if err != nil {
+		return fmt.Errorf("error at create table transactions. %w", err)
 	}
 
 	sqlStmt = "CREATE UNIQUE INDEX idx_transactions_id ON transactions(id);"
 	_, err = db.Exec(sqlStmt)
 	if err != nil {
-		return err
+		return fmt.Errorf("error at create index on table transactions. %w", err)
+	}
+
+	// Unclosed_transactions
+	// 1:n asset -> unclosed_transactions
+
+	// Create the unclosed_assets table
+	sqlStmt = "CREATE TABLE unclosed_assets (asset_id INTEGER PRIMARY KEY AUTOINCREMENT, asset_name TEXT UNIQUE NOT NULL);"
+	_, err = db.Exec(sqlStmt)
+	if err != nil {
+		return fmt.Errorf("error at create table unclosed_assets. %w", err)
+	}
+
+	// Create the unclosed_transactions table
+	sqlStmt = "CREATE TABLE unclosed_trans (unclosed_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+		"asset_id INTEGER NOT NULL, " +
+		"transaction_id TEXT, date DATETIME, transactionType TEXT, isClosed INTEGER, " +
+		"assetType TEXT, asset TEXT, tickerSymbol TEXT, quantity INTEGER, price INTEGER, fees REAL, currency TEXT, " +
+		"FOREIGN KEY (asset_id) REFERENCES unclosed_assets(asset_id) ON DELETE CASCADE);"
+	_, err = db.Exec(sqlStmt)
+	if err != nil {
+		return fmt.Errorf("error at create table unclosed_trans. %w", err)
 	}
 
 	return nil

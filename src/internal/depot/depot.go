@@ -14,7 +14,7 @@ type DepotEntry struct {
 	TickerSymbol string  `json:"tickerSymbol"`
 	Quantity     float32 `json:"quantity"` //Anzahl der Assets
 	Price        float32 `json:"price"`    //Preis des Assets
-	Currency     string  `json:"currency"` //Währung des Assets currency.Unit ist zu speziell für json und db.
+	Currency     string  `json:"currency"` //Währung des Assets currency. Unit ist zu speziell für json und db.
 }
 
 // TotalPrice berechnet und gibt den gesamt Ankaufspreis zurück
@@ -219,7 +219,7 @@ func (d *Depot) LoadStock() {
 	d.createDepotEntries()
 }
 
-func NewDepot(uuidGen func() uuid.UUID, dataStore storage.Store) Depot {
+func GetDepot(uuidGen func() uuid.UUID, dataStore storage.Store) Depot {
 	return Depot{
 		DepotEntries:         make(map[string]DepotEntry),
 		RealizedGains:        make([]RealizedGain, 0, 5),

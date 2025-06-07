@@ -96,8 +96,8 @@ func TestComputeTransactions(t *testing.T) {
 			filenameTrans := fmt.Sprintf("../../testdata/depot/RawTransactionsTest%d.csv", i)
 			i = i + 1
 
-			store := storage.NewCsvStorage(filenameTrans, uuidGenerator.GetUUID)
-			dep := NewDepot(uuidGenerator.GetUUID, &store)
+			store := storage.GetCsvStorage(filenameTrans, uuidGenerator.GetUUID)
+			dep := GetDepot(uuidGenerator.GetUUID, &store)
 
 			err := dep.ComputeAllTransactions()
 			if err != nil {

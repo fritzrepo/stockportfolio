@@ -110,3 +110,72 @@ func (s *DatabaseStorage) loadAllTransactions(db *sql.DB) ([]Transaction, error)
 	}
 	return transactions, nil
 }
+
+func (s *DatabaseStorage) insertUnclosedTransaction(db *sql.DB, trans Transaction) error {
+
+	// Save Asset-Name in unclosed_assets table
+	// SQLite spezifisch
+	sqlStmt := "INSERT OR IGNORE INTO unclosed_assets (asset_name) VALUES (?);"
+	// Modern
+	// sqlStmt := "INSERT INTO unclosed_assets (asset_name) VALUES (?) ON CONFLICT(asset_name) DO NOTHING;"
+	// Beides wird von SQLite unterstützt
+	_, err := db.Exec(sqlStmt, trans.Asset)
+
+	if err != nil {
+
+		return err
+	}
+
+	// Get the asset_id from the asset_name table
+	var assetId int
+	sqlStmt = "SELECT asset_id FROM unclosed_assets WHERE asset_name = ?;"
+	err = db.QueryRow(sqlStmt, trans.Asset).Scan(&assetId)
+
+	if err != nil {
+		return err
+	}
+
+	// Insert the transaction into unclosed
+	sqlStmt = "INSERT INTO unclosed_trans (asset_id, transaction_id, date, transactionType, isClosed, assetType, asset, tickerSymbol, quantity, price, fees, currency) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+	_, err = db.Exec(sqlStmt,
+		assetId,
+		trans.Id,
+		trans.Date,
+		trans.TransactionType,
+		trans.IsClosed,
+		trans.AssetType,
+		trans.Asset,
+		trans.TickerSymbol,
+		trans.Quantity,
+		trans.Price,
+		trans.Fees,
+		trans.Currency)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *DatabaseStorage) readUnclosedAssetNames(db *sql.DB) ([]string, error) {
+	assetNames := make([]string, 0)
+
+	sqlStmt := "SELECT asset_name FROM unclosed_assets;"
+	rows, err := db.Query(sqlStmt)
+	if err != nil {
+		return nil, fmt.Errorf("error at read unclosed asset names. %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var assetName string
+		err = rows.Scan(
+			&assetName)
+		if err != nil {
+			return nil, err
+		}
+		assetNames = append(assetNames, assetName)
+	}
+	return assetNames, nil
+}

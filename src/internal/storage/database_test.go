@@ -9,7 +9,6 @@ import (
 )
 
 func setupTestStore(t *testing.T) MemoryDatabase {
-	// In-Memory SQLite-Datenbank
 	store := GetMemoryDatabase(uuid.New)
 	store.Open()
 	err := store.CreateDatabase()
@@ -23,7 +22,7 @@ func setupTestStore(t *testing.T) MemoryDatabase {
 	return store
 }
 
-func TestGeneralDatabaseFunctions(t *testing.T) {
+func TestInsertTransaction(t *testing.T) {
 	store := setupTestStore(t)
 
 	transaction := &Transaction{
@@ -59,5 +58,41 @@ func TestGeneralDatabaseFunctions(t *testing.T) {
 		transactions[0].Fees != transaction.Fees ||
 		transactions[0].Currency != transaction.Currency {
 		t.Errorf("Expected %+v, but got %+v", transaction, transactions[0])
+	}
+}
+
+func TestInsertUclosedTransaction(t *testing.T) {
+	store := setupTestStore(t)
+
+	transaction := &Transaction{
+		Date:            time.Date(2023, 10, 1, 12, 0, 0, 0, time.UTC),
+		TransactionType: "buy",
+		IsClosed:        false,
+		AssetType:       "stock",
+		Asset:           "Apple",
+		TickerSymbol:    "AAPL",
+		Quantity:        10,
+		Price:           150,
+		Fees:            1.5,
+		Currency:        "USD"}
+
+	err := store.InsertUnclosedTransaction(*transaction)
+	if err != nil {
+		t.Errorf("Failed to insert unclosed asset name: %v", err)
+	}
+	//Füge es nochmal ein, um zu testen, das es bei der Tabelle "unclosed_assets" zu keinem Insert-Fehler kommt.
+	//Bzw. dass der Insert dann nicht durchgeführt wird.
+	err = store.InsertUnclosedTransaction(*transaction)
+	if err != nil {
+		t.Errorf("Failed to insert unclosed asset name: %v", err)
+	}
+
+	assetNames, err := store.LoadAllUnclosedAssetNames()
+	if err != nil {
+		t.Errorf("Failed to load unclosed asset names: %v", err)
+	}
+
+	if len(assetNames) != 1 || assetNames[0] != transaction.Asset {
+		t.Errorf("Expected unclosed asset name 'Apple', but got %v", assetNames)
 	}
 }

@@ -55,3 +55,15 @@ func (s *MemoryDatabase) LoadAllTransactions() ([]Transaction, error) {
 	}
 	return transactions, nil
 }
+
+func (s *MemoryDatabase) InsertUnclosedTransaction(asset Transaction) error {
+	return s.baseDb.insertUnclosedTransaction(s.db, asset)
+}
+
+func (s *MemoryDatabase) LoadAllUnclosedAssetNames() ([]string, error) {
+	assetNames, err := s.baseDb.readUnclosedAssetNames(s.db)
+	if err != nil {
+		return nil, err
+	}
+	return assetNames, nil
+}

@@ -38,17 +38,17 @@ func (s *CsvStorage) LoadAllTransactions() ([]Transaction, error) {
 		if err != nil {
 			return nil, err
 		}
-		transaction.Quantity = float32(quantity)
+		transaction.Quantity = float64(quantity)
 		price, err := strconv.ParseFloat(values[6], 32)
 		if err != nil {
 			return nil, err
 		}
-		transaction.Price = float32(price)
+		transaction.Price = float64(price)
 		fees, err := strconv.ParseFloat(values[7], 32)
 		if err != nil {
 			return nil, err
 		}
-		transaction.Fees = float32(fees)
+		transaction.Fees = float64(fees)
 		// currency, err := currency.ParseISO(values[8])
 		// if err != nil {
 		// 	return nil, err

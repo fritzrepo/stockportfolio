@@ -8,8 +8,7 @@ import (
 
 type MemoryDatabase struct {
 	baseDb DatabaseStorage
-	//DatabaseStorage
-	db *sql.DB
+	db     *sql.DB
 }
 
 func (s *MemoryDatabase) CreateDatabase() error {
@@ -58,6 +57,14 @@ func (s *MemoryDatabase) LoadAllTransactions() ([]Transaction, error) {
 
 func (s *MemoryDatabase) InsertUnclosedTransaction(asset Transaction) error {
 	return s.baseDb.insertUnclosedTransaction(s.db, asset)
+}
+
+func (s *MemoryDatabase) LoadAllUnclosedTransactions() (map[string][]Transaction, error) {
+	unclosedTransactions, err := s.baseDb.readUnclosedTransactions(s.db)
+	if err != nil {
+		return nil, err
+	}
+	return unclosedTransactions, nil
 }
 
 func (s *MemoryDatabase) LoadAllUnclosedAssetNames() ([]string, error) {

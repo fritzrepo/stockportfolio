@@ -14,13 +14,13 @@ type Transaction struct {
 	AssetType       string //stock, crypto, forex
 	Asset           string
 	TickerSymbol    string
-	Quantity        float32
-	Price           float32
-	Fees            float32
+	Quantity        float64 //float64, um kombatibel mit der SQLite Datenbank zu sein.
+	Price           float64
+	Fees            float64
 	Currency        string
 }
 
 // TotalPrice berechnet und gibt den Gesamtpreis zurück
-func (d *Transaction) TotalPrice() float32 {
+func (d *Transaction) TotalPrice() float64 {
 	return d.Quantity * d.Price
 }

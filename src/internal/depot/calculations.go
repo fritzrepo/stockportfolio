@@ -32,7 +32,7 @@ func calculateProfitLoss(uuidGenerator func() uuid.UUID, sellTrans storage.Trans
 
 // calculateAmount berechnet den Gewinn/Verlust-Betrag
 // unter Verwendung von Ganzzahlen, um Rundungsfehler zu vermeiden.
-func calculateAmount(quantity, buyPrice, sellPrice float32) float32 {
+func calculateAmount(quantity, buyPrice, sellPrice float64) float64 {
 	// Skalieren auf ganze Zahlen (z.B. Cent)
 	const scale = 100
 
@@ -44,5 +44,5 @@ func calculateAmount(quantity, buyPrice, sellPrice float32) float32 {
 	diff := sp - bp
 	amount := (q * diff) / scale
 
-	return float32(amount) / scale
+	return float64(amount) / scale
 }

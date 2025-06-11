@@ -26,6 +26,7 @@ func TestInsertTransaction(t *testing.T) {
 	store := setupTestStore(t)
 
 	transaction := &Transaction{
+		Id:              uuid.New(),
 		Date:            time.Date(2023, 10, 1, 12, 0, 0, 0, time.UTC),
 		TransactionType: "buy",
 		IsClosed:        false,
@@ -65,6 +66,7 @@ func TestInsertUclosedTransaction(t *testing.T) {
 	store := setupTestStore(t)
 
 	transaction := &Transaction{
+		Id:              uuid.New(),
 		Date:            time.Date(2023, 10, 1, 12, 0, 0, 0, time.UTC),
 		TransactionType: "buy",
 		IsClosed:        false,
@@ -94,5 +96,14 @@ func TestInsertUclosedTransaction(t *testing.T) {
 
 	if len(assetNames) != 1 || assetNames[0] != transaction.Asset {
 		t.Errorf("Expected unclosed asset name 'Apple', but got %v", assetNames)
+	}
+
+	unclosedTransactions, err := store.LoadAllUnclosedTransactions()
+	if err != nil {
+		t.Errorf("Failed to load unclosed transactions: %v", err)
+	}
+
+	if len(unclosedTransactions) != 1 || len(unclosedTransactions[transaction.Asset]) != 2 {
+		t.Errorf("Expected 2 unclosed transaction for 'Apple', but got %v", len(unclosedTransactions[transaction.Asset]))
 	}
 }

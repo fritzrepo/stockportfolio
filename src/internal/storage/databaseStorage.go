@@ -22,7 +22,7 @@ func (s *DatabaseStorage) createDatabase(db *sql.DB) error {
 
 	// Create the transactions table
 	sqlStmt = "CREATE TABLE transactions (id TEXT not null primary key, date DATETIME, transactionType TEXT, isClosed INTEGER, " +
-		"assetType TEXT, asset TEXT, tickerSymbol TEXT, quantity INTEGER, price INTEGER, fees REAL, currency TEXT);"
+		"assetType TEXT, asset TEXT, tickerSymbol TEXT, quantity REAL, price REAL, fees REAL, currency TEXT);"
 	_, err = db.Exec(sqlStmt)
 	if err != nil {
 		return fmt.Errorf("error at create table transactions. %w", err)
@@ -48,11 +48,17 @@ func (s *DatabaseStorage) createDatabase(db *sql.DB) error {
 	sqlStmt = "CREATE TABLE unclosed_trans (unclosed_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
 		"asset_id INTEGER NOT NULL, " +
 		"transaction_id TEXT, date DATETIME, transactionType TEXT, isClosed INTEGER, " +
-		"assetType TEXT, asset TEXT, tickerSymbol TEXT, quantity INTEGER, price INTEGER, fees REAL, currency TEXT, " +
+		"assetType TEXT, asset TEXT, tickerSymbol TEXT, quantity REAL, price REAL, fees REAL, currency TEXT, " +
 		"FOREIGN KEY (asset_id) REFERENCES unclosed_assets(asset_id) ON DELETE CASCADE);"
 	_, err = db.Exec(sqlStmt)
 	if err != nil {
 		return fmt.Errorf("error at create table unclosed_trans. %w", err)
+	}
+
+	sqlStmt = "CREATE INDEX IF NOT EXISTS idx_nclosed_id ON unclosed_trans(unclosed_id)"
+	_, err = db.Exec(sqlStmt)
+	if err != nil {
+		return fmt.Errorf("error at create index on table unclosed. %w", err)
 	}
 
 	return nil
@@ -122,7 +128,6 @@ func (s *DatabaseStorage) insertUnclosedTransaction(db *sql.DB, trans Transactio
 	_, err := db.Exec(sqlStmt, trans.Asset)
 
 	if err != nil {
-
 		return err
 	}
 
@@ -178,4 +183,47 @@ func (s *DatabaseStorage) readUnclosedAssetNames(db *sql.DB) ([]string, error) {
 		assetNames = append(assetNames, assetName)
 	}
 	return assetNames, nil
+}
+
+func (s *DatabaseStorage) readUnclosedTransactions(db *sql.DB) (map[string][]Transaction, error) {
+	unclosedTransactions := make(map[string][]Transaction)
+	var assetNames []string
+
+	assetNames, err := s.readUnclosedAssetNames(db)
+	if err != nil {
+		return nil, fmt.Errorf("error at read unclosed transactions. %w", err)
+	}
+
+	for _, assetName := range assetNames {
+		sqlStmt := `SELECT transaction_id, date, transactionType, isClosed, assetType, asset, tickerSymbol, 
+		quantity, price, fees, currency FROM unclosed_trans 
+		WHERE asset_id = (SELECT asset_id FROM unclosed_assets WHERE asset_name = ?);`
+
+		rows, err := db.Query(sqlStmt, assetName)
+		if err != nil {
+			return nil, fmt.Errorf("error at read unclosed transactions. %w", err)
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var transaction Transaction
+			err = rows.Scan(
+				&transaction.Id,
+				&transaction.Date,
+				&transaction.TransactionType,
+				&transaction.IsClosed,
+				&transaction.AssetType,
+				&transaction.Asset,
+				&transaction.TickerSymbol,
+				&transaction.Quantity,
+				&transaction.Price,
+				&transaction.Fees,
+				&transaction.Currency)
+			if err != nil {
+				return nil, err
+			}
+			unclosedTransactions[assetName] = append(unclosedTransactions[assetName], transaction)
+		}
+	}
+	return unclosedTransactions, nil
 }

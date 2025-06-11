@@ -12,13 +12,13 @@ type DepotEntry struct {
 	AssetType    string  `json:"assetType"` //stock, crypto, forex
 	Asset        string  `json:"asset"`     //Name des Assets
 	TickerSymbol string  `json:"tickerSymbol"`
-	Quantity     float32 `json:"quantity"` //Anzahl der Assets
-	Price        float32 `json:"price"`    //Preis des Assets
+	Quantity     float64 `json:"quantity"` //Anzahl der Assets
+	Price        float64 `json:"price"`    //Preis des Assets
 	Currency     string  `json:"currency"` //Währung des Assets currency. Unit ist zu speziell für json und db.
 }
 
 // TotalPrice berechnet und gibt den gesamt Ankaufspreis zurück
-func (d *DepotEntry) TotalPrice() float32 {
+func (d *DepotEntry) TotalPrice() float64 {
 	return d.Quantity * d.Price
 }
 
@@ -27,12 +27,12 @@ type RealizedGain struct {
 	SellTransactionId uuid.UUID `json:"sellTransactionId"` // ID der Verkaufstransaktion
 	BuyTransactionId  uuid.UUID `json:"buytransactionId"`  // ID der Kauftransaktion
 	Asset             string    // Asset-Name
-	Amount            float32   // Der Gewinn/Verlust-Betrag
+	Amount            float64   // Der Gewinn/Verlust-Betrag
 	IsProfit          bool      // true für Gewinn, false für Verlust
-	TaxRate           float32   // Anwendbarer Steuersatz
-	Quantity          float32
-	BuyPrice          float32
-	SellPrice         float32
+	TaxRate           float64   // Anwendbarer Steuersatz
+	Quantity          float64
+	BuyPrice          float64
+	SellPrice         float64
 	Currency          string
 }
 

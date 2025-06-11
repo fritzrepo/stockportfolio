@@ -38,7 +38,7 @@ func (s *DatabaseStorage) createDatabase(db *sql.DB) error {
 	// 1:n asset -> unclosed_transactions
 
 	// Create the unclosed_assets table
-	sqlStmt = "CREATE TABLE unclosed_assets (asset_id INTEGER PRIMARY KEY AUTOINCREMENT, asset_name TEXT UNIQUE NOT NULL);"
+	sqlStmt = "CREATE TABLE unclosed_assets (asset_id INTEGER PRIMARY KEY AUTOINCREMENT, ticker_symbol TEXT UNIQUE NOT NULL);"
 	_, err = db.Exec(sqlStmt)
 	if err != nil {
 		return fmt.Errorf("error at create table unclosed_assets. %w", err)
@@ -121,20 +121,20 @@ func (s *DatabaseStorage) insertUnclosedTransaction(db *sql.DB, trans Transactio
 
 	// Save Asset-Name in unclosed_assets table
 	// SQLite spezifisch
-	sqlStmt := "INSERT OR IGNORE INTO unclosed_assets (asset_name) VALUES (?);"
+	sqlStmt := "INSERT OR IGNORE INTO unclosed_assets (ticker_symbol) VALUES (?);"
 	// Modern
-	// sqlStmt := "INSERT INTO unclosed_assets (asset_name) VALUES (?) ON CONFLICT(asset_name) DO NOTHING;"
+	// sqlStmt := "INSERT INTO unclosed_assets (ticker_symbol) VALUES (?) ON CONFLICT(ticker_symbol) DO NOTHING;"
 	// Beides wird von SQLite unterstützt
-	_, err := db.Exec(sqlStmt, trans.Asset)
+	_, err := db.Exec(sqlStmt, trans.TickerSymbol)
 
 	if err != nil {
 		return err
 	}
 
-	// Get the asset_id from the asset_name table
+	// Get the asset_id from the unclosed_assets table
 	var assetId int
-	sqlStmt = "SELECT asset_id FROM unclosed_assets WHERE asset_name = ?;"
-	err = db.QueryRow(sqlStmt, trans.Asset).Scan(&assetId)
+	sqlStmt = "SELECT asset_id FROM unclosed_assets WHERE ticker_symbol = ?;"
+	err = db.QueryRow(sqlStmt, trans.TickerSymbol).Scan(&assetId)
 
 	if err != nil {
 		return err
@@ -163,43 +163,43 @@ func (s *DatabaseStorage) insertUnclosedTransaction(db *sql.DB, trans Transactio
 	return nil
 }
 
-func (s *DatabaseStorage) readUnclosedAssetNames(db *sql.DB) ([]string, error) {
-	assetNames := make([]string, 0)
+func (s *DatabaseStorage) readUnclosedTickerSymbol(db *sql.DB) ([]string, error) {
+	tickerSymbols := make([]string, 0)
 
-	sqlStmt := "SELECT asset_name FROM unclosed_assets;"
+	sqlStmt := "SELECT ticker_symbol FROM unclosed_assets;"
 	rows, err := db.Query(sqlStmt)
 	if err != nil {
-		return nil, fmt.Errorf("error at read unclosed asset names. %w", err)
+		return nil, fmt.Errorf("error at read unclosed ticker symbol. %w", err)
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		var assetName string
+		var tickerSymbol string
 		err = rows.Scan(
-			&assetName)
+			&tickerSymbol)
 		if err != nil {
 			return nil, err
 		}
-		assetNames = append(assetNames, assetName)
+		tickerSymbols = append(tickerSymbols, tickerSymbol)
 	}
-	return assetNames, nil
+	return tickerSymbols, nil
 }
 
 func (s *DatabaseStorage) readUnclosedTransactions(db *sql.DB) (map[string][]Transaction, error) {
 	unclosedTransactions := make(map[string][]Transaction)
-	var assetNames []string
+	var tickerSymbols []string
 
-	assetNames, err := s.readUnclosedAssetNames(db)
+	tickerSymbols, err := s.readUnclosedTickerSymbol(db)
 	if err != nil {
 		return nil, fmt.Errorf("error at read unclosed transactions. %w", err)
 	}
 
-	for _, assetName := range assetNames {
+	for _, tickerSymbol := range tickerSymbols {
 		sqlStmt := `SELECT transaction_id, date, transactionType, isClosed, assetType, asset, tickerSymbol, 
 		quantity, price, fees, currency FROM unclosed_trans 
-		WHERE asset_id = (SELECT asset_id FROM unclosed_assets WHERE asset_name = ?);`
+		WHERE asset_id = (SELECT asset_id FROM unclosed_assets WHERE ticker_symbol = ?);`
 
-		rows, err := db.Query(sqlStmt, assetName)
+		rows, err := db.Query(sqlStmt, tickerSymbol)
 		if err != nil {
 			return nil, fmt.Errorf("error at read unclosed transactions. %w", err)
 		}
@@ -222,7 +222,7 @@ func (s *DatabaseStorage) readUnclosedTransactions(db *sql.DB) (map[string][]Tra
 			if err != nil {
 				return nil, err
 			}
-			unclosedTransactions[assetName] = append(unclosedTransactions[assetName], transaction)
+			unclosedTransactions[tickerSymbol] = append(unclosedTransactions[tickerSymbol], transaction)
 		}
 	}
 	return unclosedTransactions, nil

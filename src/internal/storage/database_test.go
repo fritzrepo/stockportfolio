@@ -89,13 +89,13 @@ func TestInsertUclosedTransaction(t *testing.T) {
 		t.Errorf("Failed to insert unclosed asset name: %v", err)
 	}
 
-	assetNames, err := store.LoadAllUnclosedAssetNames()
+	tickerSymbols, err := store.LoadAllUnclosedTickerSymbols()
 	if err != nil {
 		t.Errorf("Failed to load unclosed asset names: %v", err)
 	}
 
-	if len(assetNames) != 1 || assetNames[0] != transaction.Asset {
-		t.Errorf("Expected unclosed asset name 'Apple', but got %v", assetNames)
+	if len(tickerSymbols) != 1 || tickerSymbols[0] != transaction.TickerSymbol {
+		t.Errorf("Expected unclosed asset name 'Apple', but got %v", tickerSymbols)
 	}
 
 	unclosedTransactions, err := store.LoadAllUnclosedTransactions()
@@ -103,7 +103,7 @@ func TestInsertUclosedTransaction(t *testing.T) {
 		t.Errorf("Failed to load unclosed transactions: %v", err)
 	}
 
-	if len(unclosedTransactions) != 1 || len(unclosedTransactions[transaction.Asset]) != 2 {
-		t.Errorf("Expected 2 unclosed transaction for 'Apple', but got %v", len(unclosedTransactions[transaction.Asset]))
+	if len(unclosedTransactions) != 1 || len(unclosedTransactions[transaction.TickerSymbol]) != 2 {
+		t.Errorf("Expected 2 unclosed transaction for 'Apple', but got %v", len(unclosedTransactions[transaction.TickerSymbol]))
 	}
 }

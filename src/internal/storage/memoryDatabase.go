@@ -67,10 +67,10 @@ func (s *MemoryDatabase) LoadAllUnclosedTransactions() (map[string][]Transaction
 	return unclosedTransactions, nil
 }
 
-func (s *MemoryDatabase) LoadAllUnclosedAssetNames() ([]string, error) {
-	assetNames, err := s.baseDb.readUnclosedAssetNames(s.db)
+func (s *MemoryDatabase) LoadAllUnclosedTickerSymbols() ([]string, error) {
+	tickerSymbols, err := s.baseDb.readUnclosedTickerSymbol(s.db)
 	if err != nil {
 		return nil, err
 	}
-	return assetNames, nil
+	return tickerSymbols, nil
 }

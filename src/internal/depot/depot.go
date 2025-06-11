@@ -98,22 +98,22 @@ func (d *Depot) AddTransaction(newTransaction storage.Transaction) error {
 
 func (d *Depot) addBuyTransaction(newTransaction storage.Transaction) {
 
-	availableBuyTrans, exists := d.unclosedTransactions[newTransaction.Asset]
+	availableBuyTrans, exists := d.unclosedTransactions[newTransaction.TickerSymbol]
 	//Gibt es schon Transaktionen für das Asset? Dann füge die neue Transaktion hinzu.
 	if exists {
 		availableBuyTrans = append(availableBuyTrans, newTransaction)
-		d.unclosedTransactions[newTransaction.Asset] = availableBuyTrans
+		d.unclosedTransactions[newTransaction.TickerSymbol] = availableBuyTrans
 	} else {
 		//Gibt es noch keine Transaktionen für das Asset? Dann erstelle einen neuen Slice mit der Transaktion.
 		unclosedTransaction := []storage.Transaction{}
 		unclosedTransaction = append(unclosedTransaction, newTransaction)
-		d.unclosedTransactions[newTransaction.Asset] = unclosedTransaction
+		d.unclosedTransactions[newTransaction.TickerSymbol] = unclosedTransaction
 	}
 }
 
 func (d *Depot) addSellTransaction(newTransaction storage.Transaction) {
 
-	transactions, exists := d.unclosedTransactions[newTransaction.Asset]
+	transactions, exists := d.unclosedTransactions[newTransaction.TickerSymbol]
 	if exists {
 		//FiFo-Prinzip (First in, first out)
 		//Ziehe die Anzahl der verkauften Assets von der ersten buy Transaktion ab.
@@ -175,22 +175,22 @@ func (d *Depot) addSellTransaction(newTransaction storage.Transaction) {
 				}
 			} else {
 				//ToDo => Richtige Fehlermeldung / Fehlerbehandlung implementieren
-				fmt.Printf("Transaction is not a buy transaction %s\n", newTransaction.Asset)
+				fmt.Printf("Transaction is not a buy transaction %s\n", newTransaction.TickerSymbol)
 			}
 		}
 		//Wennn die tansactions leer sind, dann lösche den Eintrag
 		if len(modifyTransactions) == 0 {
-			delete(d.unclosedTransactions, newTransaction.Asset)
+			delete(d.unclosedTransactions, newTransaction.TickerSymbol)
 		} else {
 			//Aktualisiere die Transaktionen
-			d.unclosedTransactions[newTransaction.Asset] = modifyTransactions
+			d.unclosedTransactions[newTransaction.TickerSymbol] = modifyTransactions
 		}
 
 		//Durchschnittskostenmethode (average cost)
 		//ToDo => Implementieren
 	} else {
 		//ToDo => Richtige Fehlermeldung / Fehlerbehandlung implementieren
-		fmt.Printf("No buy transaction available for this sell transaction %s\n", newTransaction.Asset)
+		fmt.Printf("No buy transaction available for this sell transaction %s\n", newTransaction.TickerSymbol)
 	}
 }
 
@@ -199,16 +199,16 @@ func (d *Depot) createDepotEntries() {
 	for _, transactions := range d.unclosedTransactions {
 		for _, transaction := range transactions {
 			//Wenn das Asset noch nicht im Depot ist, dann füge es hinzu
-			entry, exists := d.DepotEntries[transaction.Asset]
+			entry, exists := d.DepotEntries[transaction.TickerSymbol]
 			if !exists {
-				d.DepotEntries[transaction.Asset] = DepotEntry{AssetType: transaction.AssetType, Asset: transaction.Asset,
+				d.DepotEntries[transaction.TickerSymbol] = DepotEntry{AssetType: transaction.AssetType, Asset: transaction.Asset,
 					TickerSymbol: transaction.TickerSymbol, Quantity: transaction.Quantity, Price: transaction.Price,
 					Currency: transaction.Currency}
 			} else {
 				//Wenn das Asset schon im Depot ist, dann aktualisiere den (durchschnitts) Preis und die Anzahl
 				entry.Price = (entry.Price*entry.Quantity + transaction.Price*transaction.Quantity) / (entry.Quantity + transaction.Quantity)
 				entry.Quantity += transaction.Quantity
-				d.DepotEntries[transaction.Asset] = entry
+				d.DepotEntries[transaction.TickerSymbol] = entry
 			}
 		}
 	}

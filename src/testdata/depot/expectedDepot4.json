@@ -1,5 +1,5 @@
 {
-    "BASF": {
+    "BAS1": {
         "AssetType": "stock",
         "Asset": "BASF",
         "TickerSymbol": "BAS1",
@@ -7,7 +7,7 @@
         "Price": 45.5,
         "Currency": "EUR"
     },
-    "Apple": {
+    "AAPL": {
         "AssetType": "stock",
         "Asset": "Apple",
         "TickerSymbol": "AAPL",

@@ -5,46 +5,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/fritzrepo/stockportfolio/internal/testutil"
 	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// Mock-Generator für Tests
-type MockUUIDGenerator struct {
-	uuids     []uuid.UUID
-	callCount int
-}
-
-// Erstellt einen neuen Mock-Generator mit 20 vordefinierten UUIDs
-func NewMockUUIDGenerator() *MockUUIDGenerator {
-	mockGenerator := &MockUUIDGenerator{
-		uuids:     make([]uuid.UUID, 20),
-		callCount: 0,
-	}
-
-	// 20 feste UUIDs generieren
-	for i := 0; i < 20; i++ {
-		// Erzeuge vorhersehbare UUIDs, die sich nur in einer Ziffer unterscheiden
-		mockGenerator.uuids[i] = uuid.MustParse(fmt.Sprintf("00000000-0000-0000-0000-0000000000%02d", i+1))
-	}
-
-	return mockGenerator
-}
-
-// GetUUID liefert bei jedem Aufruf die nächste UUID aus der Liste
-func (m *MockUUIDGenerator) GetUUID() uuid.UUID {
-	if m.callCount >= len(m.uuids) {
-		// Wenn alle UUIDs verwendet wurden, beginne von vorne
-		m.callCount = 0
-	}
-
-	id := m.uuids[m.callCount]
-	m.callCount++
-	return id
-}
-
 func setupTestStore(t *testing.T) MemoryDatabase {
-	var uuidGenerator = NewMockUUIDGenerator()
+	var uuidGenerator = testutil.NewMockUUIDGenerator()
 	store := GetMemoryDatabase(uuidGenerator.GetUUID)
 	store.Open()
 	err := store.CreateDatabase()

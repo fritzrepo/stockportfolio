@@ -21,7 +21,7 @@ func (s *DatabaseStorage) createDatabase(db *sql.DB) error {
 	}
 
 	// Create the transactions table
-	sqlStmt = "CREATE TABLE transactions (id TEXT not null primary key, date DATETIME, transactionType TEXT, isClosed INTEGER, " +
+	sqlStmt = "CREATE TABLE transactions (id TEXT(36) not null primary key, date DATETIME, transactionType TEXT, isClosed INTEGER, " +
 		"assetType TEXT, asset TEXT, tickerSymbol TEXT, quantity REAL, price REAL, fees REAL, currency TEXT);"
 	_, err = db.Exec(sqlStmt)
 	if err != nil {
@@ -59,6 +59,16 @@ func (s *DatabaseStorage) createDatabase(db *sql.DB) error {
 	_, err = db.Exec(sqlStmt)
 	if err != nil {
 		return fmt.Errorf("error at create index on table unclosed. %w", err)
+	}
+
+	// Create the RealizedGains table
+	sqlStmt = "CREATE TABLE realized_gains (id TEXT(36) not null primary key, sellTransactionId TEXT(36), buyTransactionId TEXT(36), " +
+		"asset TEXT, amount REAL, isProfit INTEGER, taxRate REAL, quantity REAL, buyPrice REAL, sellPrice REAL, currency TEXT, " +
+		"FOREIGN KEY (sellTransactionId) REFERENCES transactions(id) ON DELETE CASCADE, " +
+		"FOREIGN KEY (buyTransactionId) REFERENCES transactions(id) ON DELETE CASCADE);"
+	_, err = db.Exec(sqlStmt)
+	if err != nil {
+		return fmt.Errorf("error at create table realized_gains. %w", err)
 	}
 
 	return nil
@@ -226,4 +236,25 @@ func (s *DatabaseStorage) readUnclosedTransactions(db *sql.DB) (map[string][]Tra
 		}
 	}
 	return unclosedTransactions, nil
+}
+
+func (s *DatabaseStorage) insertRealizedGain(db *sql.DB, realizedGain *RealizedGain) error {
+	realizedGain.Id = s.uuidGenerator()
+	sqlStmt := "INSERT INTO realized_gains (id, sellTransactionId, buyTransactionId, asset, amount, isProfit, taxRate, quantity, buyPrice, sellPrice, currency) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+	_, err := db.Exec(sqlStmt,
+		realizedGain.Id,
+		realizedGain.SellTransactionId,
+		realizedGain.BuyTransactionId,
+		realizedGain.Asset,
+		realizedGain.Amount,
+		realizedGain.IsProfit,
+		realizedGain.TaxRate,
+		realizedGain.Quantity,
+		realizedGain.BuyPrice,
+		realizedGain.SellPrice,
+		realizedGain.Currency)
+	if err != nil {
+		return err
+	}
+	return nil
 }

@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -8,8 +9,43 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+// Mock-Generator für Tests
+type MockUUIDGenerator struct {
+	uuids     []uuid.UUID
+	callCount int
+}
+
+// Erstellt einen neuen Mock-Generator mit 20 vordefinierten UUIDs
+func NewMockUUIDGenerator() *MockUUIDGenerator {
+	mockGenerator := &MockUUIDGenerator{
+		uuids:     make([]uuid.UUID, 20),
+		callCount: 0,
+	}
+
+	// 20 feste UUIDs generieren
+	for i := 0; i < 20; i++ {
+		// Erzeuge vorhersehbare UUIDs, die sich nur in einer Ziffer unterscheiden
+		mockGenerator.uuids[i] = uuid.MustParse(fmt.Sprintf("00000000-0000-0000-0000-0000000000%02d", i+1))
+	}
+
+	return mockGenerator
+}
+
+// GetUUID liefert bei jedem Aufruf die nächste UUID aus der Liste
+func (m *MockUUIDGenerator) GetUUID() uuid.UUID {
+	if m.callCount >= len(m.uuids) {
+		// Wenn alle UUIDs verwendet wurden, beginne von vorne
+		m.callCount = 0
+	}
+
+	id := m.uuids[m.callCount]
+	m.callCount++
+	return id
+}
+
 func setupTestStore(t *testing.T) MemoryDatabase {
-	store := GetMemoryDatabase(uuid.New)
+	var uuidGenerator = NewMockUUIDGenerator()
+	store := GetMemoryDatabase(uuidGenerator.GetUUID)
 	store.Open()
 	err := store.CreateDatabase()
 	if err != nil {
@@ -26,7 +62,7 @@ func TestInsertTransaction(t *testing.T) {
 	store := setupTestStore(t)
 
 	transaction := &Transaction{
-		Id:              uuid.New(),
+		//Id:            uuid.New(), // Wird automatisch generiert.
 		Date:            time.Date(2023, 10, 1, 12, 0, 0, 0, time.UTC),
 		TransactionType: "buy",
 		IsClosed:        false,
@@ -66,7 +102,7 @@ func TestInsertUclosedTransaction(t *testing.T) {
 	store := setupTestStore(t)
 
 	transaction := &Transaction{
-		Id:              uuid.New(),
+		//Id:            uuid.New(), // Wird automatisch generiert.
 		Date:            time.Date(2023, 10, 1, 12, 0, 0, 0, time.UTC),
 		TransactionType: "buy",
 		IsClosed:        false,
@@ -106,4 +142,93 @@ func TestInsertUclosedTransaction(t *testing.T) {
 	if len(unclosedTransactions) != 1 || len(unclosedTransactions[transaction.TickerSymbol]) != 2 {
 		t.Errorf("Expected 2 unclosed transaction for 'Apple', but got %v", len(unclosedTransactions[transaction.TickerSymbol]))
 	}
+
+	//Füge ein dritte Transaktion für ein neues asset hinzu.
+	transaction = &Transaction{
+		//Id:            uuid.New(), // Wird automatisch generiert.
+		Date:            time.Date(2022, 11, 7, 12, 0, 0, 0, time.UTC),
+		TransactionType: "buy",
+		IsClosed:        false,
+		AssetType:       "stock",
+		Asset:           "BASF",
+		TickerSymbol:    "BAS1",
+		Quantity:        20,
+		Price:           99,
+		Fees:            1.5,
+		Currency:        "USD"}
+
+	err = store.InsertUnclosedTransaction(*transaction)
+	if err != nil {
+		t.Errorf("Failed to insert unclosed asset name: %v", err)
+	}
+
+	unclosedTransactions, err = store.LoadAllUnclosedTransactions()
+	if err != nil {
+		t.Errorf("Failed to load unclosed transactions: %v", err)
+	}
+
+	if len(unclosedTransactions) != 2 || len(unclosedTransactions[transaction.TickerSymbol]) != 1 {
+		t.Errorf("Expected 2 unclosed transaction for 'Apple', but got %v", len(unclosedTransactions[transaction.TickerSymbol]))
+	}
+}
+
+func TestInsertRealizedGains(t *testing.T) {
+	store := setupTestStore(t)
+
+	//Wird für die Foreign Key-Referenz benötigt.
+	transaction := &Transaction{
+		//Id:              uuid.New(), // Wird automatisch generiert.
+		Date:            time.Date(2023, 10, 1, 12, 0, 0, 0, time.UTC),
+		TransactionType: "buy",
+		IsClosed:        false,
+		AssetType:       "stock",
+		Asset:           "Apple",
+		TickerSymbol:    "AAPL",
+		Quantity:        10,
+		Price:           150,
+		Fees:            1.5,
+		Currency:        "USD"}
+
+	err := store.InsertTransaction(transaction)
+	if err != nil {
+		t.Errorf("Failed to insert transaction: %v", err)
+	}
+
+	transaction = &Transaction{
+		//Id:              uuid.New(), // Wird automatisch generiert.
+		Date:            time.Date(2023, 11, 1, 12, 0, 0, 0, time.UTC),
+		TransactionType: "sell",
+		IsClosed:        false,
+		AssetType:       "stock",
+		Asset:           "Apple",
+		TickerSymbol:    "AAPL",
+		Quantity:        10,
+		Price:           200,
+		Fees:            1.5,
+		Currency:        "USD"}
+
+	err = store.InsertTransaction(transaction)
+	if err != nil {
+		t.Errorf("Failed to insert transaction: %v", err)
+	}
+
+	gain := &RealizedGain{
+		Id:                uuid.New(),
+		SellTransactionId: uuid.MustParse(fmt.Sprintf("00000000-0000-0000-0000-0000000000%02d", 1)),
+		BuyTransactionId:  uuid.MustParse(fmt.Sprintf("00000000-0000-0000-0000-0000000000%02d", 1)),
+		Asset:             "Apple",
+		Amount:            500.0,
+		IsProfit:          true,
+		TaxRate:           0.25,
+		Quantity:          10,
+		BuyPrice:          150.0,
+		SellPrice:         200.0,
+		Currency:          "USD",
+	}
+
+	err = store.InsertRealizedGain(*gain)
+	if err != nil {
+		t.Errorf("Failed to insert realized gain: %v", err)
+	}
+
 }

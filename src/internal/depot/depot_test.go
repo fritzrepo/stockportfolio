@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"reflect"
 	"testing"
@@ -51,9 +52,9 @@ func (m *MockUUIDGenerator) GetUUID() uuid.UUID {
 func TestComputeTransactions(t *testing.T) {
 
 	type TestCases = []struct {
-		Name          string                `json:"name"`
-		ExpectedGains []RealizedGain        `json:"expectedGains"`
-		ExpectedDepot map[string]DepotEntry `json:"expectedDepot"`
+		Name          string                 `json:"name"`
+		ExpectedGains []storage.RealizedGain `json:"expectedGains"`
+		ExpectedDepot map[string]DepotEntry  `json:"expectedDepot"`
 	}
 
 	testcount := 5
@@ -125,8 +126,18 @@ func TestComputeTransactions(t *testing.T) {
 			for _, expectedEntry := range tt.ExpectedGains {
 				for _, realizedGain := range realizedGains {
 					if realizedGain.Id == expectedEntry.Id {
-						if reflect.DeepEqual(realizedGain, expectedEntry) {
-							t.Logf("Realized gain for asset %s matches expected values: %+v", expectedEntry.Asset, realizedGain)
+						const epsilon = 1e-3
+						if realizedGain.SellTransactionId != expectedEntry.SellTransactionId ||
+							realizedGain.BuyTransactionId != expectedEntry.BuyTransactionId ||
+							realizedGain.Asset != expectedEntry.Asset ||
+							math.Abs(expectedEntry.Amount-realizedGain.Amount) > epsilon ||
+							realizedGain.IsProfit != expectedEntry.IsProfit ||
+							math.Abs(expectedEntry.TaxRate-realizedGain.TaxRate) > epsilon ||
+							math.Abs(expectedEntry.Quantity-realizedGain.Quantity) > epsilon ||
+							math.Abs(expectedEntry.BuyPrice-realizedGain.BuyPrice) > epsilon ||
+							math.Abs(expectedEntry.SellPrice-realizedGain.SellPrice) > epsilon ||
+							realizedGain.Currency != expectedEntry.Currency {
+							t.Errorf("Realized gain for asset %s does not match expected values. Expected: %+v, Got: %+v", expectedEntry.Asset, expectedEntry, realizedGain)
 						}
 					}
 				}

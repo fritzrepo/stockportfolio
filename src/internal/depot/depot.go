@@ -22,23 +22,9 @@ func (d *DepotEntry) TotalPrice() float64 {
 	return d.Quantity * d.Price
 }
 
-type RealizedGain struct {
-	Id                uuid.UUID `json:"id"`                // ID der Realisierung
-	SellTransactionId uuid.UUID `json:"sellTransactionId"` // ID der Verkaufstransaktion
-	BuyTransactionId  uuid.UUID `json:"buytransactionId"`  // ID der Kauftransaktion
-	Asset             string    // Asset-Name
-	Amount            float64   // Der Gewinn/Verlust-Betrag
-	IsProfit          bool      // true für Gewinn, false für Verlust
-	TaxRate           float64   // Anwendbarer Steuersatz
-	Quantity          float64
-	BuyPrice          float64
-	SellPrice         float64
-	Currency          string
-}
-
 type Depot struct {
 	DepotEntries         map[string]DepotEntry
-	RealizedGains        []RealizedGain
+	RealizedGains        []storage.RealizedGain
 	unclosedTransactions map[string][]storage.Transaction
 	uuidGenerator        func() uuid.UUID
 	store                storage.Store
@@ -116,6 +102,7 @@ func (d *Depot) addSellTransaction(newTransaction storage.Transaction) {
 	transactions, exists := d.unclosedTransactions[newTransaction.TickerSymbol]
 	if exists {
 		//FiFo-Prinzip (First in, first out)
+
 		//Ziehe die Anzahl der verkauften Assets von der ersten buy Transaktion ab.
 		//Sollten mehr Assets verkauft werden, als gekauft wurden, dann wird
 		//die nächste buy Transaktion verwendet.
@@ -187,7 +174,8 @@ func (d *Depot) addSellTransaction(newTransaction storage.Transaction) {
 		}
 
 		//Durchschnittskostenmethode (average cost)
-		//ToDo => Implementieren
+		//ToDo => Implementieren wenn nötig.
+
 	} else {
 		//ToDo => Richtige Fehlermeldung / Fehlerbehandlung implementieren
 		fmt.Printf("No buy transaction available for this sell transaction %s\n", newTransaction.TickerSymbol)
@@ -222,7 +210,7 @@ func (d *Depot) LoadStock() {
 func GetDepot(uuidGen func() uuid.UUID, dataStore storage.Store) Depot {
 	return Depot{
 		DepotEntries:         make(map[string]DepotEntry),
-		RealizedGains:        make([]RealizedGain, 0, 5),
+		RealizedGains:        make([]storage.RealizedGain, 0, 5),
 		unclosedTransactions: make(map[string][]storage.Transaction),
 		uuidGenerator:        uuidGen,
 		store:                dataStore,

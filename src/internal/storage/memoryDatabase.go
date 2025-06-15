@@ -67,10 +67,15 @@ func (s *MemoryDatabase) LoadAllUnclosedTransactions() (map[string][]Transaction
 	return unclosedTransactions, nil
 }
 
+// Wird eigentlich nicht benötigt.
 func (s *MemoryDatabase) LoadAllUnclosedTickerSymbols() ([]string, error) {
 	tickerSymbols, err := s.baseDb.readUnclosedTickerSymbol(s.db)
 	if err != nil {
 		return nil, err
 	}
 	return tickerSymbols, nil
+}
+
+func (s *MemoryDatabase) InsertRealizedGain(realizedGain RealizedGain) error {
+	return s.baseDb.insertRealizedGain(s.db, &realizedGain)
 }

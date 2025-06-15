@@ -17,7 +17,7 @@
         "sellTransactionId": "00000000-0000-0000-0000-000000000006",
         "buyTransactionId": "00000000-0000-0000-0000-000000000002",
         "asset": "Apple",
-        "amount": 99,
+        "amount": 199,
         "isProfit": true,
         "taxRate": 0.25,
         "quantity": 10,

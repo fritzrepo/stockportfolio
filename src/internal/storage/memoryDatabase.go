@@ -2,6 +2,7 @@ package storage
 
 import (
 	"database/sql"
+	"errors"
 
 	"github.com/google/uuid"
 )
@@ -11,20 +12,16 @@ type MemoryDatabase struct {
 	db     *sql.DB
 }
 
-func (s *MemoryDatabase) CreateDatabase() error {
-	err := s.baseDb.createDatabase(s.db)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func GetMemoryDatabase(uuidGen func() uuid.UUID) MemoryDatabase {
-	var memoryDB = MemoryDatabase{
+	var memoryDB = &MemoryDatabase{
 		db: nil,
 	}
 	memoryDB.baseDb.uuidGenerator = uuidGen
-	return memoryDB
+	return *memoryDB
+}
+
+func (s *MemoryDatabase) CreateDatabase() error {
+	return s.baseDb.createDatabase(s.db)
 }
 
 func (s *MemoryDatabase) Open() error {
@@ -40,42 +37,34 @@ func (s *MemoryDatabase) Close() error {
 	if s.db != nil {
 		return s.db.Close()
 	}
-	return nil
+	return errors.New("database instance is nil, cannot close")
 }
 
-func (s *MemoryDatabase) InsertTransaction(transaction *Transaction) error {
+func (s *MemoryDatabase) AddTransaction(transaction *Transaction) error {
 	return s.baseDb.insertTransaction(s.db, transaction)
 }
 
-func (s *MemoryDatabase) LoadAllTransactions() ([]Transaction, error) {
-	transactions, err := s.baseDb.loadAllTransactions(s.db)
-	if err != nil {
-		return nil, err
-	}
-	return transactions, nil
+func (s *MemoryDatabase) ReadAllTransactions() ([]Transaction, error) {
+	return s.baseDb.loadAllTransactions(s.db)
 }
 
-func (s *MemoryDatabase) InsertUnclosedTransaction(asset Transaction) error {
+func (s *MemoryDatabase) AddUnclosedTransaction(asset Transaction) error {
 	return s.baseDb.insertUnclosedTransaction(s.db, asset)
 }
 
-func (s *MemoryDatabase) LoadAllUnclosedTransactions() (map[string][]Transaction, error) {
-	unclosedTransactions, err := s.baseDb.readUnclosedTransactions(s.db)
-	if err != nil {
-		return nil, err
-	}
-	return unclosedTransactions, nil
+func (s *MemoryDatabase) ReadAllUnclosedTransactions() (map[string][]Transaction, error) {
+	return s.baseDb.loadUnclosedTransactions(s.db)
 }
 
 // Wird eigentlich nicht benötigt.
-func (s *MemoryDatabase) LoadAllUnclosedTickerSymbols() ([]string, error) {
-	tickerSymbols, err := s.baseDb.readUnclosedTickerSymbol(s.db)
-	if err != nil {
-		return nil, err
-	}
-	return tickerSymbols, nil
+func (s *MemoryDatabase) ReadAllUnclosedTickerSymbols() ([]string, error) {
+	return s.baseDb.loadUnclosedTickerSymbols(s.db)
 }
 
-func (s *MemoryDatabase) InsertRealizedGain(realizedGain RealizedGain) error {
+func (s *MemoryDatabase) AddRealizedGain(realizedGain RealizedGain) error {
 	return s.baseDb.insertRealizedGain(s.db, &realizedGain)
+}
+
+func (s *MemoryDatabase) ReadAllRealizedGains() ([]RealizedGain, error) {
+	return s.baseDb.loadAllRealizedGains(s.db)
 }

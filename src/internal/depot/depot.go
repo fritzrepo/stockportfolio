@@ -40,7 +40,7 @@ func (d *Depot) ComputeAllTransactions() error {
 	//ToDo => Prüfen ob hier noch die persistierten "RealizedGains" und
 	// die "unclosed transactions" gelöscht werden müsssen.
 
-	transactions, err := d.store.LoadAllTransactions()
+	transactions, err := d.store.ReadAllTransactions()
 	if err != nil {
 		return err
 	}

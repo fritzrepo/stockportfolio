@@ -14,6 +14,7 @@ func main() {
 	var buildDb = false
 	var fillDb = false
 	var compute = false
+	var readTransaktions = false
 
 	// the first argument is always program name
 	argLength := len(os.Args[1:])
@@ -26,6 +27,9 @@ func main() {
 		}
 		if a == "fillDb" {
 			fillDb = true
+		}
+		if a == "readTransactions" {
+			readTransaktions = true
 		}
 		if a == "compute" {
 			compute = true
@@ -53,7 +57,7 @@ func main() {
 	if fillDb {
 		fmt.Println("Fill up database")
 		store := storage.GetCsvStorage(config.TransactionFilePath, uuid.New)
-		transactions, err := store.LoadAllTransactions()
+		transactions, err := store.ReadAllTransactions()
 		if err != nil {
 			// Fehlerbehandlung
 			fmt.Println("Error loading transactions")
@@ -73,6 +77,24 @@ func main() {
 		}
 	}
 
+	if readTransaktions {
+		fmt.Println("Reading transactions from database")
+		store := storage.GetFileDatabase(config.DatabaseFilePath, uuid.New)
+
+		transactions, err := store.ReadAllTransactions()
+		if err != nil {
+			// Fehlerbehandlung
+			fmt.Println("Error reading transactions")
+			panic(err)
+		}
+
+		for _, transaction := range transactions {
+			fmt.Println(transaction)
+		}
+		fmt.Println("End of transactions")
+		return
+	}
+
 	if compute {
 		fmt.Println("Computing transactions")
 		store := storage.GetCsvStorage(config.TransactionFilePath, uuid.New)
@@ -90,7 +112,6 @@ func main() {
 		fmt.Println("Realized Gains:")
 		fmt.Println(dep.RealizedGains)
 		fmt.Println("End")
-
 	}
 
 }

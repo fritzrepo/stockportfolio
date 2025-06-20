@@ -173,7 +173,7 @@ func (s *DatabaseStorage) insertUnclosedTransaction(db *sql.DB, trans Transactio
 	return nil
 }
 
-func (s *DatabaseStorage) readUnclosedTickerSymbol(db *sql.DB) ([]string, error) {
+func (s *DatabaseStorage) loadUnclosedTickerSymbols(db *sql.DB) ([]string, error) {
 	tickerSymbols := make([]string, 0)
 
 	sqlStmt := "SELECT ticker_symbol FROM unclosed_assets;"
@@ -195,11 +195,11 @@ func (s *DatabaseStorage) readUnclosedTickerSymbol(db *sql.DB) ([]string, error)
 	return tickerSymbols, nil
 }
 
-func (s *DatabaseStorage) readUnclosedTransactions(db *sql.DB) (map[string][]Transaction, error) {
+func (s *DatabaseStorage) loadUnclosedTransactions(db *sql.DB) (map[string][]Transaction, error) {
 	unclosedTransactions := make(map[string][]Transaction)
 	var tickerSymbols []string
 
-	tickerSymbols, err := s.readUnclosedTickerSymbol(db)
+	tickerSymbols, err := s.loadUnclosedTickerSymbols(db)
 	if err != nil {
 		return nil, fmt.Errorf("error at read unclosed transactions. %w", err)
 	}
@@ -257,4 +257,35 @@ func (s *DatabaseStorage) insertRealizedGain(db *sql.DB, realizedGain *RealizedG
 		return err
 	}
 	return nil
+}
+
+func (s *DatabaseStorage) loadAllRealizedGains(db *sql.DB) ([]RealizedGain, error) {
+	realizedGains := make([]RealizedGain, 0)
+
+	rows, err := db.Query("SELECT id, sellTransactionId, buyTransactionId, asset, amount, isProfit, taxRate, quantity, buyPrice, sellPrice, currency FROM realized_gains")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var realizedGain RealizedGain
+		err = rows.Scan(
+			&realizedGain.Id,
+			&realizedGain.SellTransactionId,
+			&realizedGain.BuyTransactionId,
+			&realizedGain.Asset,
+			&realizedGain.Amount,
+			&realizedGain.IsProfit,
+			&realizedGain.TaxRate,
+			&realizedGain.Quantity,
+			&realizedGain.BuyPrice,
+			&realizedGain.SellPrice,
+			&realizedGain.Currency)
+		if err != nil {
+			return nil, err
+		}
+		realizedGains = append(realizedGains, realizedGain)
+	}
+	return realizedGains, nil
 }

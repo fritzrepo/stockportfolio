@@ -20,8 +20,9 @@
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}/src/cmd/cli",
             "args": [
-                "buildDb"
+                //"buildDb"
                 //"fillDb"
+                "readTransactions"
                 //"compute"
             ],
         },

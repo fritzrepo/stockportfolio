@@ -2,6 +2,7 @@ package storage
 
 import (
 	"bufio"
+	"errors"
 	"os"
 	"strconv"
 	"strings"
@@ -15,7 +16,17 @@ type CsvStorage struct {
 	uuidGenerator func() uuid.UUID
 }
 
-func (s *CsvStorage) LoadAllTransactions() ([]Transaction, error) {
+func (s *CsvStorage) CreateDatabase() error {
+	// Not implemented for CSV storage
+	return errors.New("CreateDatabase not implemented for CSV storage")
+}
+
+func (s *CsvStorage) AddTransaction(transaction *Transaction) error {
+	//Not implemented for CSV storage
+	return errors.New("AddTransaction not implemented for CSV storage")
+}
+
+func (s *CsvStorage) ReadAllTransactions() ([]Transaction, error) {
 	lines, err := loadFile(s.filePath)
 	if err != nil {
 		return nil, err
@@ -59,6 +70,31 @@ func (s *CsvStorage) LoadAllTransactions() ([]Transaction, error) {
 		transactions = append(transactions, transaction)
 	}
 	return transactions, nil
+}
+
+func (s *CsvStorage) AddUnclosedTransaction(asset Transaction) error {
+	// Not implemented for CSV storage
+	return errors.New("AddUnclosedTransaction not implemented for CSV storage")
+}
+
+func (s *CsvStorage) ReadAllUnclosedTickerSymbols() ([]string, error) {
+	// Not implemented for CSV storage
+	return nil, errors.New("ReadAllUnclosedTickerSymbols not implemented for CSV storage")
+}
+
+func (s *CsvStorage) ReadAllUnclosedTransactions() (map[string][]Transaction, error) {
+	// Not implemented for CSV storage
+	return nil, errors.New("ReadAllUnclosedTransactions not implemented for CSV storage")
+}
+
+func (s *CsvStorage) AddRealizedGain(realizedGain RealizedGain) error {
+	// Not implemented for CSV storage
+	return errors.New("AddRealizedGain not implemented for CSV storage")
+}
+
+func (s *CsvStorage) ReadAllRealizedGains() ([]RealizedGain, error) {
+	// Not implemented for CSV storage
+	return nil, errors.New("ReadAllRealizedGains not implemented for CSV storage")
 }
 
 func loadFile(filename string) ([]string, error) {

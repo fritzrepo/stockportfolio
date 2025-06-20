@@ -10,7 +10,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func setupTestStore(t *testing.T) MemoryDatabase {
+func setupTestStore(t *testing.T) Store {
 	var uuidGenerator = testutil.NewMockUUIDGenerator()
 	store := GetMemoryDatabase(uuidGenerator.GetUUID)
 	store.Open()
@@ -22,7 +22,7 @@ func setupTestStore(t *testing.T) MemoryDatabase {
 	t.Cleanup(func() {
 		store.Close()
 	})
-	return store
+	return &store
 }
 
 func TestInsertTransaction(t *testing.T) {
@@ -41,12 +41,12 @@ func TestInsertTransaction(t *testing.T) {
 		Fees:            1.5,
 		Currency:        "USD"}
 
-	err := store.InsertTransaction(transaction)
+	err := store.AddTransaction(transaction)
 	if err != nil {
 		t.Errorf("Failed to insert transaction: %v", err)
 	}
 
-	transactions, err := store.LoadAllTransactions()
+	transactions, err := store.ReadAllTransactions()
 	if err != nil {
 		t.Errorf("Failed to load transactions: %v", err)
 	}
@@ -81,18 +81,18 @@ func TestInsertUclosedTransaction(t *testing.T) {
 		Fees:            1.5,
 		Currency:        "USD"}
 
-	err := store.InsertUnclosedTransaction(*transaction)
+	err := store.AddUnclosedTransaction(*transaction)
 	if err != nil {
 		t.Errorf("Failed to insert unclosed asset name: %v", err)
 	}
 	//Füge es nochmal ein, um zu testen, das es bei der Tabelle "unclosed_assets" zu keinem Insert-Fehler kommt.
 	//Bzw. dass der Insert dann nicht durchgeführt wird.
-	err = store.InsertUnclosedTransaction(*transaction)
+	err = store.AddUnclosedTransaction(*transaction)
 	if err != nil {
 		t.Errorf("Failed to insert unclosed asset name: %v", err)
 	}
 
-	tickerSymbols, err := store.LoadAllUnclosedTickerSymbols()
+	tickerSymbols, err := store.ReadAllUnclosedTickerSymbols()
 	if err != nil {
 		t.Errorf("Failed to load unclosed asset names: %v", err)
 	}
@@ -101,7 +101,7 @@ func TestInsertUclosedTransaction(t *testing.T) {
 		t.Errorf("Expected unclosed asset name 'Apple', but got %v", tickerSymbols)
 	}
 
-	unclosedTransactions, err := store.LoadAllUnclosedTransactions()
+	unclosedTransactions, err := store.ReadAllUnclosedTransactions()
 	if err != nil {
 		t.Errorf("Failed to load unclosed transactions: %v", err)
 	}
@@ -124,12 +124,12 @@ func TestInsertUclosedTransaction(t *testing.T) {
 		Fees:            1.5,
 		Currency:        "USD"}
 
-	err = store.InsertUnclosedTransaction(*transaction)
+	err = store.AddUnclosedTransaction(*transaction)
 	if err != nil {
 		t.Errorf("Failed to insert unclosed asset name: %v", err)
 	}
 
-	unclosedTransactions, err = store.LoadAllUnclosedTransactions()
+	unclosedTransactions, err = store.ReadAllUnclosedTransactions()
 	if err != nil {
 		t.Errorf("Failed to load unclosed transactions: %v", err)
 	}
@@ -156,7 +156,7 @@ func TestInsertRealizedGains(t *testing.T) {
 		Fees:            1.5,
 		Currency:        "USD"}
 
-	err := store.InsertTransaction(transaction)
+	err := store.AddTransaction(transaction)
 	if err != nil {
 		t.Errorf("Failed to insert transaction: %v", err)
 	}
@@ -174,7 +174,7 @@ func TestInsertRealizedGains(t *testing.T) {
 		Fees:            1.5,
 		Currency:        "USD"}
 
-	err = store.InsertTransaction(transaction)
+	err = store.AddTransaction(transaction)
 	if err != nil {
 		t.Errorf("Failed to insert transaction: %v", err)
 	}
@@ -193,9 +193,29 @@ func TestInsertRealizedGains(t *testing.T) {
 		Currency:          "USD",
 	}
 
-	err = store.InsertRealizedGain(*gain)
+	err = store.AddRealizedGain(*gain)
 	if err != nil {
 		t.Errorf("Failed to insert realized gain: %v", err)
+	}
+
+	realizedGains, err := store.ReadAllRealizedGains()
+	if err != nil {
+		t.Errorf("Failed to load realized gains: %v", err)
+	}
+
+	if len(realizedGains) != 1 {
+		t.Errorf("Expected 1 realized gain, but got %d", len(realizedGains))
+	}
+	//Hier traten bisher keine Rundungsfehler auf. Wenn doch, dann epsilon verwenden. Siehe DepotTest.
+	if realizedGains[0].Asset != gain.Asset ||
+		realizedGains[0].Amount != gain.Amount ||
+		realizedGains[0].IsProfit != gain.IsProfit ||
+		realizedGains[0].TaxRate != gain.TaxRate ||
+		realizedGains[0].Quantity != gain.Quantity ||
+		realizedGains[0].BuyPrice != gain.BuyPrice ||
+		realizedGains[0].SellPrice != gain.SellPrice ||
+		realizedGains[0].Currency != gain.Currency {
+		t.Errorf("Expected %+v, but got %+v", gain, realizedGains[0])
 	}
 
 }

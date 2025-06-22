@@ -14,7 +14,6 @@ import (
 )
 
 // TestComputeTransactions
-
 func TestComputeTransactions(t *testing.T) {
 
 	type TestCases = []struct {

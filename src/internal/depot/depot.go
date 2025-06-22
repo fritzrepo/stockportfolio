@@ -202,7 +202,7 @@ func (d *Depot) createDepotEntries() {
 	}
 }
 
-func (d *Depot) LoadStock() {
+func (d *Depot) CalculateSecuritiesAccountBalance() {
 	loadUnclosedTransactions()
 	d.createDepotEntries()
 }

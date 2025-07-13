@@ -289,3 +289,11 @@ func (s *DatabaseStorage) loadAllRealizedGains(db *sql.DB) ([]RealizedGain, erro
 	}
 	return realizedGains, nil
 }
+
+func (s *DatabaseStorage) ping(db *sql.DB) error {
+	err := db.Ping()
+	if err != nil {
+		return fmt.Errorf("error at ping database. %w", err)
+	}
+	return nil
+}

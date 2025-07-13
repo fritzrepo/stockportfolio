@@ -24,6 +24,10 @@ func (s *MemoryDatabase) CreateDatabase() error {
 	return s.baseDb.createDatabase(s.db)
 }
 
+func (s *MemoryDatabase) Ping() error {
+	return s.baseDb.ping(s.db)
+}
+
 func (s *MemoryDatabase) Open() error {
 	var err error
 	s.db, err = sql.Open("sqlite3", ":memory:")

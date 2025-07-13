@@ -29,6 +29,12 @@ func (s *FileDatabase) CreateDatabase() error {
 	})
 }
 
+func (s *FileDatabase) Ping() error {
+	return s.withDatabase(func(db *sql.DB) error {
+		return s.baseDb.ping(db)
+	})
+}
+
 func (s *FileDatabase) InsertTransaction(transaction *Transaction) error {
 	return s.withDatabase(func(db *sql.DB) error {
 		return s.baseDb.insertTransaction(db, transaction)

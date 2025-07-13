@@ -1,6 +1,7 @@
 package storage
 
 type Store interface {
+	Ping() error
 	CreateDatabase() error
 	AddTransaction(transaction *Transaction) error
 	ReadAllTransactions() ([]Transaction, error)

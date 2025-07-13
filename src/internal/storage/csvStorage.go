@@ -21,6 +21,11 @@ func (s *CsvStorage) CreateDatabase() error {
 	return errors.New("CreateDatabase not implemented for CSV storage")
 }
 
+func (s *CsvStorage) Ping() error {
+	_, err := os.Open(s.filePath)
+	return err
+}
+
 func (s *CsvStorage) AddTransaction(transaction *Transaction) error {
 	//Not implemented for CSV storage
 	return errors.New("AddTransaction not implemented for CSV storage")

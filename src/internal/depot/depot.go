@@ -69,11 +69,12 @@ func loadUnclosedTransactions() {
 // }
 
 func (d *Depot) AddTransaction(newTransaction storage.Transaction) error {
-	if newTransaction.TransactionType == "buy" {
+	switch newTransaction.TransactionType {
+	case "buy":
 		d.addBuyTransaction(newTransaction)
-	} else if newTransaction.TransactionType == "sell" {
+	case "sell":
 		d.addSellTransaction(newTransaction)
-	} else {
+	default:
 		return errors.New("transaction type not supported")
 	}
 

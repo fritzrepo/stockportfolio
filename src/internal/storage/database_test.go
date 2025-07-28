@@ -22,7 +22,7 @@ func setupTestStore(t *testing.T) Store {
 	t.Cleanup(func() {
 		store.Close()
 	})
-	return &store
+	return store
 }
 
 func TestInsertTransaction(t *testing.T) {

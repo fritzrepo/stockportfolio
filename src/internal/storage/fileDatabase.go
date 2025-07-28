@@ -12,15 +12,14 @@ type FileDatabase struct {
 	filePath string
 }
 
-func GetFileDatabase(pathToFile string, uuidGen func() uuid.UUID) FileDatabase {
+func GetFileDatabase(pathToFile string, uuidGen func() uuid.UUID) *FileDatabase {
 
 	var fileDB = &FileDatabase{
 		filePath: pathToFile,
 	}
 	fileDB.baseDb.uuidGenerator = uuidGen
 
-	return *fileDB
-
+	return fileDB
 }
 
 func (s *FileDatabase) CreateDatabase() error {
@@ -35,7 +34,7 @@ func (s *FileDatabase) Ping() error {
 	})
 }
 
-func (s *FileDatabase) InsertTransaction(transaction *Transaction) error {
+func (s *FileDatabase) AddTransaction(transaction *Transaction) error {
 	return s.withDatabase(func(db *sql.DB) error {
 		return s.baseDb.insertTransaction(db, transaction)
 	})

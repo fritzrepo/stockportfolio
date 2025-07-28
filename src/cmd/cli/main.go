@@ -68,7 +68,7 @@ func main() {
 
 		for _, transaction := range transactions {
 			fmt.Println(transaction)
-			err := dbStore.InsertTransaction(&transaction)
+			err := dbStore.AddTransaction(&transaction)
 			if err != nil {
 				fmt.Println("Database not created or already exists")
 				panic(err)

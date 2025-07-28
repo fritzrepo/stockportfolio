@@ -3,10 +3,11 @@ package main
 import (
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 
+	"github.com/fritzrepo/stockportfolio/cmd/server/handlers"
 	"github.com/fritzrepo/stockportfolio/internal/config"
+	"github.com/fritzrepo/stockportfolio/internal/depot"
 	"github.com/fritzrepo/stockportfolio/internal/storage"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -14,35 +15,15 @@ import (
 
 var appConfig *config.Config
 
+// Interface-Variablen sind bereits "Referenzen", deshalb kein *storage.Store
+var store storage.Store
+var portfolio *depot.Depot
+
 func main() {
 	router := gin.Default()
 
-	router.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "pong",
-			"path":    appConfig.DatabaseFilePath,
-		})
-	})
-
-	router.POST("/api/depot/addTransaction", func(c *gin.Context) {
-		var transaction storage.Transaction
-		if err := c.ShouldBindJSON(&transaction); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
-			return
-		}
-		transaction.Id = uuid.New()
-		log.Printf("Received transaction: %+v\n", transaction)
-
-		response := &ApiResponse{
-			Status:       "success",
-			Message:      "Transaction added successfully",
-			ErrorMessage: "",
-			ErrorDetails: ""}
-
-		response.Data = transaction
-		c.JSON(http.StatusCreated, response)
-
-	})
+	router.GET("/ping", handlers.PingHandler(appConfig))
+	router.POST("/api/depot/addTransaction", handlers.AddTransactionHandler(portfolio))
 
 	router.Run()
 }
@@ -51,6 +32,7 @@ func init() {
 	log.Println("Initializing server...")
 	loadAppConfig()
 	initializingStore()
+	initializingDepot()
 	log.Println("Server initialized successfully.")
 }
 
@@ -69,7 +51,7 @@ func initializingStore() {
 	_, err := os.Stat(appConfig.DatabaseFilePath)
 	dbNotExists := os.IsNotExist(err)
 
-	store := storage.GetFileDatabase(appConfig.DatabaseFilePath, uuid.New)
+	store = storage.GetFileDatabase(appConfig.DatabaseFilePath, uuid.New)
 
 	if dbNotExists {
 		log.Println("Database file does not exist, creating a new one...")
@@ -82,4 +64,9 @@ func initializingStore() {
 	} else {
 		log.Println("Store successful initialized and connected to the database.")
 	}
+}
+
+func initializingDepot() {
+	log.Println("Initializing depot...")
+	portfolio = depot.GetDepot(uuid.New, store)
 }

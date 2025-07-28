@@ -78,6 +78,8 @@ func (d *Depot) AddTransaction(newTransaction storage.Transaction) error {
 		return errors.New("transaction type not supported")
 	}
 
+	saveTransaction()
+
 	//saveRealizedGains()
 	d.createDepotEntries()
 	return nil
@@ -208,8 +210,12 @@ func (d *Depot) CalculateSecuritiesAccountBalance() {
 	d.createDepotEntries()
 }
 
-func GetDepot(uuidGen func() uuid.UUID, dataStore storage.Store) Depot {
-	return Depot{
+func saveTransaction() {
+	//ToDo => Implementieren
+}
+
+func GetDepot(uuidGen func() uuid.UUID, dataStore storage.Store) *Depot {
+	return &Depot{
 		DepotEntries:         make(map[string]DepotEntry),
 		RealizedGains:        make([]storage.RealizedGain, 0, 5),
 		unclosedTransactions: make(map[string][]storage.Transaction),

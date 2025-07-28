@@ -12,12 +12,12 @@ type MemoryDatabase struct {
 	db     *sql.DB
 }
 
-func GetMemoryDatabase(uuidGen func() uuid.UUID) MemoryDatabase {
+func GetMemoryDatabase(uuidGen func() uuid.UUID) *MemoryDatabase {
 	var memoryDB = &MemoryDatabase{
 		db: nil,
 	}
 	memoryDB.baseDb.uuidGenerator = uuidGen
-	return *memoryDB
+	return memoryDB
 }
 
 func (s *MemoryDatabase) CreateDatabase() error {

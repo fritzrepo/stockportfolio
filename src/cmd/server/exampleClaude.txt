@@ -1,0 +1,231 @@
+// main.go
+package main
+
+import (
+	"log"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+)
+
+// ===== MODELS =====
+type User struct {
+	ID    uint   `json:"id" gorm:"primaryKey"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
+
+// ===== REPOSITORIES =====
+type UserRepository struct {
+	db *gorm.DB
+}
+
+func NewUserRepository(db *gorm.DB) *UserRepository {
+	return &UserRepository{db: db}
+}
+
+func (r *UserRepository) GetByID(id uint) (*User, error) {
+	var user User
+	err := r.db.First(&user, id).Error
+	return &user, err
+}
+
+func (r *UserRepository) Create(user *User) error {
+	return r.db.Create(user).Error
+}
+
+func (r *UserRepository) GetAll() ([]User, error) {
+	var users []User
+	err := r.db.Find(&users).Error
+	return users, err
+}
+
+// ===== SERVICES =====
+type UserService struct {
+	repo *UserRepository
+}
+
+func NewUserService(repo *UserRepository) *UserService {
+	return &UserService{repo: repo}
+}
+
+func (s *UserService) GetUser(id uint) (*User, error) {
+	// Hier kann zusätzliche Geschäftslogik stehen
+	return s.repo.GetByID(id)
+}
+
+func (s *UserService) CreateUser(name, email string) (*User, error) {
+	user := &User{Name: name, Email: email}
+	err := s.repo.Create(user)
+	return user, err
+}
+
+func (s *UserService) GetAllUsers() ([]User, error) {
+	return s.repo.GetAll()
+}
+
+// ===== HANDLERS =====
+type UserHandler struct {
+	userService *UserService
+}
+
+func NewUserHandler(userService *UserService) *UserHandler {
+	return &UserHandler{userService: userService}
+}
+
+func (h *UserHandler) GetUser(c *gin.Context) {
+	var uri struct {
+		ID uint `uri:"id" binding:"required"`
+	}
+	
+	if err := c.ShouldBindUri(&uri); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	user, err := h.userService.GetUser(uri.ID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
+}
+
+func (h *UserHandler) CreateUser(c *gin.Context) {
+	var req struct {
+		Name  string `json:"name" binding:"required"`
+		Email string `json:"email" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	user, err := h.userService.CreateUser(req.Name, req.Email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, user)
+}
+
+func (h *UserHandler) GetAllUsers(c *gin.Context) {
+	users, err := h.userService.GetAllUsers()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, users)
+}
+
+// ===== DEPENDENCY CONTAINER =====
+type Dependencies struct {
+	DB          *gorm.DB
+	UserRepo    *UserRepository
+	UserService *UserService
+	UserHandler *UserHandler
+}
+
+func NewDependencies() (*Dependencies, error) {
+	// Database Connection
+	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+	if err != nil {
+		return nil, err
+	}
+
+	// Auto Migrate
+	db.AutoMigrate(&User{})
+
+	// Manual Dependency Injection - Reihenfolge ist wichtig!
+	userRepo := NewUserRepository(db)
+	userService := NewUserService(userRepo)
+	userHandler := NewUserHandler(userService)
+
+	return &Dependencies{
+		DB:          db,
+		UserRepo:    userRepo,
+		UserService: userService,
+		UserHandler: userHandler,
+	}, nil
+}
+
+// ===== ROUTER SETUP =====
+func setupRoutes(deps *Dependencies) *gin.Engine {
+	router := gin.Default()
+
+	// User Routes
+	userRoutes := router.Group("/users")
+	{
+		userRoutes.GET("/", deps.UserHandler.GetAllUsers)
+		userRoutes.GET("/:id", deps.UserHandler.GetUser)
+		userRoutes.POST("/", deps.UserHandler.CreateUser)
+	}
+
+	return router
+}
+
+// ===== MAIN FUNCTION =====
+func main() {
+	// Initialize all dependencies
+	deps, err := NewDependencies()
+	if err != nil {
+		log.Fatal("Failed to initialize dependencies:", err)
+	}
+
+	// Setup router with dependencies
+	router := setupRoutes(deps)
+
+	// Start server
+	log.Println("Server starting on :8080")
+	log.Fatal(router.Run(":8080"))
+}
+
+// ===== ALTERNATIVE: SERVICE LOCATOR PATTERN =====
+// Alternative Implementierung mit Service Locator
+type ServiceContainer struct {
+	db          *gorm.DB
+	userRepo    *UserRepository
+	userService *UserService
+}
+
+func NewServiceContainer() (*ServiceContainer, error) {
+	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+	if err != nil {
+		return nil, err
+	}
+	
+	container := &ServiceContainer{db: db}
+	container.userRepo = NewUserRepository(db)
+	container.userService = NewUserService(container.userRepo)
+	
+	return container, nil
+}
+
+func (sc *ServiceContainer) GetUserService() *UserService {
+	return sc.userService
+}
+
+func (sc *ServiceContainer) GetDB() *gorm.DB {
+	return sc.db
+}
+
+// Handler mit Service Locator
+type UserHandlerWithLocator struct {
+	container *ServiceContainer
+}
+
+func NewUserHandlerWithLocator(container *ServiceContainer) *UserHandlerWithLocator {
+	return &UserHandlerWithLocator{container: container}
+}
+
+func (h *UserHandlerWithLocator) GetUser(c *gin.Context) {
+	userService := h.container.GetUserService()
+	// ... Rest der Handler-Logik
+	_ = userService // Verwendung der Variable um Compiler-Warnung zu vermeiden
+}

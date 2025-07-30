@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/fritzrepo/stockportfolio/internal/config"
-	"github.com/fritzrepo/stockportfolio/internal/depot"
+	"github.com/fritzrepo/stockportfolio/internal/portfolio"
 	"github.com/fritzrepo/stockportfolio/internal/storage"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -30,7 +30,7 @@ func PingHandler(appConfig *config.Config) gin.HandlerFunc {
 	}
 }
 
-func AddTransactionHandler(depot depot.Portfolio) gin.HandlerFunc {
+func AddTransactionHandler(depot portfolio.Portfolio) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		response := &ApiResponse{

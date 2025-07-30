@@ -1,4 +1,4 @@
-package depot
+package portfolio
 
 import (
 	"github.com/fritzrepo/stockportfolio/internal/storage"

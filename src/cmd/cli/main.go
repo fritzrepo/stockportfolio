@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/fritzrepo/stockportfolio/internal/config"
-	"github.com/fritzrepo/stockportfolio/internal/depot"
+	"github.com/fritzrepo/stockportfolio/internal/portfolio"
 	"github.com/fritzrepo/stockportfolio/internal/storage"
 	"github.com/google/uuid"
 )
@@ -99,7 +99,7 @@ func main() {
 		fmt.Println("Computing transactions")
 		store := storage.GetCsvStorage(config.TransactionFilePath, uuid.New)
 
-		dep := depot.GetDepot(uuid.New, &store)
+		dep := portfolio.GetDepot(uuid.New, &store)
 
 		err = dep.ComputeAllTransactions()
 		if err != nil {

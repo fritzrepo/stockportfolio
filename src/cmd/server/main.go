@@ -7,7 +7,7 @@ import (
 
 	"github.com/fritzrepo/stockportfolio/cmd/server/handlers"
 	"github.com/fritzrepo/stockportfolio/internal/config"
-	"github.com/fritzrepo/stockportfolio/internal/depot"
+	"github.com/fritzrepo/stockportfolio/internal/portfolio"
 	"github.com/fritzrepo/stockportfolio/internal/storage"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -17,13 +17,13 @@ var appConfig *config.Config
 
 // Interface-Variablen sind bereits "Referenzen", deshalb kein *storage.Store
 var store storage.Store
-var portfolio *depot.Depot
+var depot *portfolio.Depot
 
 func main() {
 	router := gin.Default()
 
 	router.GET("/ping", handlers.PingHandler(appConfig))
-	router.POST("/api/depot/addTransaction", handlers.AddTransactionHandler(portfolio))
+	router.POST("/api/depot/addTransaction", handlers.AddTransactionHandler(depot))
 
 	router.Run()
 }
@@ -68,5 +68,5 @@ func initializingStore() {
 
 func initializingDepot() {
 	log.Println("Initializing depot...")
-	portfolio = depot.GetDepot(uuid.New, store)
+	depot = portfolio.GetDepot(uuid.New, store)
 }

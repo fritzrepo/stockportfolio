@@ -1,4 +1,4 @@
-package depot
+package portfolio
 
 import (
 	"encoding/json"

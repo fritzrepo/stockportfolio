@@ -30,7 +30,7 @@ func PingHandler(appConfig *config.Config) gin.HandlerFunc {
 	}
 }
 
-func AddTransactionHandler(portfolio *depot.Depot) gin.HandlerFunc {
+func AddTransactionHandler(depot depot.Portfolio) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		response := &ApiResponse{
@@ -47,25 +47,25 @@ func AddTransactionHandler(portfolio *depot.Depot) gin.HandlerFunc {
 			response.Message = "Failed to add transaction"
 			response.ErrorMessage = "Invalid request body"
 			response.ErrorDetails = err.Error()
-			c.JSON(http.StatusBadRequest, response)
+			c.JSON(http.StatusOK, response)
 			return
 		}
 
 		transaction.Id = uuid.New()
 		log.Printf("Received transaction: %+v\n", transaction)
-		err := portfolio.AddTransaction(transaction)
+		err := depot.AddTransaction(transaction)
 		if err != nil {
 			log.Printf("Error adding transaction: %v\n", err)
 			response.Status = "error"
 			response.Message = "Failed to add transaction"
 			response.ErrorDetails = err.Error()
-			c.JSON(http.StatusInternalServerError, response)
+			c.JSON(http.StatusOK, response)
 			return
 		}
 
 		log.Printf("Transaction added successfully: %+v\n", transaction)
 		response.Data = transaction
 
-		c.JSON(http.StatusCreated, response)
+		c.JSON(http.StatusOK, response)
 	}
 }

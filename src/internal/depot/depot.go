@@ -30,6 +30,16 @@ type Depot struct {
 	store                storage.Store
 }
 
+func GetDepot(uuidGen func() uuid.UUID, dataStore storage.Store) *Depot {
+	return &Depot{
+		DepotEntries:         make(map[string]DepotEntry),
+		RealizedGains:        make([]storage.RealizedGain, 0, 5),
+		unclosedTransactions: make(map[string][]storage.Transaction),
+		uuidGenerator:        uuidGen,
+		store:                dataStore,
+	}
+}
+
 // Diese Funktion berechnet die "Realized Gains" und die "unclosed transactions" aller ihr
 // zugänglichen Transaktionen. Ist für den Import historischer Transaktionen oder für einen Fehlerfall gedacht,
 // bei dem man alles neu berechnen muss.
@@ -52,22 +62,6 @@ func (d *Depot) ComputeAllTransactions() error {
 	return nil
 }
 
-// func saveUnclosedTransactions() {
-// 	//ToDo => Implementieren
-// }
-
-func loadUnclosedTransactions() {
-	//ToDo => Implementieren
-}
-
-// func saveRealizedGains() {
-// 	//ToDo => Implementieren
-// }
-
-// func loadRealizedGains() {
-// 	//ToDo => Implementieren
-// }
-
 func (d *Depot) AddTransaction(newTransaction storage.Transaction) error {
 	switch newTransaction.TransactionType {
 	case "buy":
@@ -78,7 +72,7 @@ func (d *Depot) AddTransaction(newTransaction storage.Transaction) error {
 		return errors.New("transaction type not supported")
 	}
 
-	saveTransaction()
+	d.store.AddTransaction(&newTransaction)
 
 	//saveRealizedGains()
 	d.createDepotEntries()
@@ -210,16 +204,18 @@ func (d *Depot) CalculateSecuritiesAccountBalance() {
 	d.createDepotEntries()
 }
 
-func saveTransaction() {
+// func saveUnclosedTransactions() {
+// 	//ToDo => Implementieren
+// }
+
+func loadUnclosedTransactions() {
 	//ToDo => Implementieren
 }
 
-func GetDepot(uuidGen func() uuid.UUID, dataStore storage.Store) *Depot {
-	return &Depot{
-		DepotEntries:         make(map[string]DepotEntry),
-		RealizedGains:        make([]storage.RealizedGain, 0, 5),
-		unclosedTransactions: make(map[string][]storage.Transaction),
-		uuidGenerator:        uuidGen,
-		store:                dataStore,
-	}
-}
+// func saveRealizedGains() {
+// 	//ToDo => Implementieren
+// }
+
+// func loadRealizedGains() {
+// 	//ToDo => Implementieren
+// }

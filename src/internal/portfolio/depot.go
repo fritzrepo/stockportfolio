@@ -40,9 +40,14 @@ func GetDepot(uuidGen func() uuid.UUID, dataStore storage.Store) *Depot {
 	}
 }
 
-func (d *Depot) CalculateSecuritiesAccountBalance() {
-	//loadUnclosedTransactions()
-	d.createDepotEntries()
+func (d *Depot) CalculateSecuritiesAccountBalance() error {
+	err := d.loadUnclosedTransactions()
+	if err != nil {
+		return err
+	} else {
+		d.createDepotEntries()
+	}
+	return nil
 }
 
 func (d *Depot) GetEntries() map[string]DepotEntry {
@@ -89,6 +94,16 @@ func (d *Depot) AddTransaction(newTransaction storage.Transaction) error {
 	err = d.store.RemoveAllUnclosedTransactions()
 	if err != nil {
 		return fmt.Errorf("failed to remove all unclosed transaction from store: %w", err)
+	}
+
+	//Schleife zum Speichern aller unclosed transactions
+	for _, asset := range d.unclosedTransactions {
+		for _, transaction := range asset {
+			err = d.store.AddUnclosedTransaction(transaction)
+			if err != nil {
+				return fmt.Errorf("failed to save unclosed transactions to store: %w", err)
+			}
+		}
 	}
 
 	//saveRealizedGains()
@@ -210,6 +225,15 @@ func (d *Depot) addSellTransaction(newTransaction storage.Transaction) error {
 	//Durchschnittskostenmethode (average cost)
 	//ToDo => Implementieren wenn nötig.
 
+	return nil
+}
+
+func (d *Depot) loadUnclosedTransactions() error {
+	var err error
+	d.unclosedTransactions, err = d.store.ReadAllUnclosedTransactions()
+	if err != nil {
+		return fmt.Errorf("failed to read unclosed transactions from store: %w", err)
+	}
 	return nil
 }
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -33,7 +34,12 @@ func init() {
 	log.Println("Initializing server...")
 	loadAppConfig()
 	initializingStore()
-	initializingDepot()
+	err := initializingDepot()
+	if err != nil {
+		log.Fatalf("Failed to initialize depot: %v", err)
+		//Programm beenden
+		os.Exit(1)
+	}
 	log.Println("Server initialized successfully.")
 }
 
@@ -67,7 +73,15 @@ func initializingStore() {
 	}
 }
 
-func initializingDepot() {
+func initializingDepot() error {
 	log.Println("Initializing depot...")
 	depot = portfolio.GetDepot(uuid.New, store)
+	err := depot.CalculateSecuritiesAccountBalance()
+	if err != nil {
+		log.Fatalf("Failed to calculate securities account balance: %v", err)
+		return errors.New("failed to initialize depot")
+	} else {
+		log.Println("Depot successful initialized.")
+	}
+	return nil
 }

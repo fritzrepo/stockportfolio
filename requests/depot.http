@@ -22,7 +22,7 @@ Accept: application/json
   "assetType": "stock",
   "asset": "Apple Inc.",
   "tickerSymbol": "AAPL",
-  "quantity": 20,
+  "quantity": 10,
   "price": 300.00,
   "fees": 5.00,
   "currency": "EUR"

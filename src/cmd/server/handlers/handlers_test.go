@@ -35,9 +35,6 @@ func TestAddTransactionHandler_Success(t *testing.T) {
 		addTransaction: func(tr storage.Transaction) error {
 			return nil
 		},
-		getEntries: func() map[string]portfolio.DepotEntry {
-			return make(map[string]portfolio.DepotEntry)
-		},
 	}
 
 	router := gin.New()
@@ -193,6 +190,57 @@ func TestAddTransactionHandler_AddTransactionError(t *testing.T) {
 
 	if resp.ErrorDetails != "db error" {
 		t.Error("Expected error details, got empty string")
+	}
+
+}
+
+func TestGetEnriesHandler_Success(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	mock := &mockDepot{
+		getEntries: func() map[string]portfolio.DepotEntry {
+			entries := make(map[string]portfolio.DepotEntry)
+			entries["AAPL"] = portfolio.DepotEntry{
+				TickerSymbol: "AAPL",
+				Asset:        "Apple Inc.",
+				AssetType:    "stock",
+				Quantity:     50,
+				Price:        145.00,
+				Currency:     "USD",
+			}
+			return entries
+		},
+	}
+
+	router := gin.New()
+	router.GET("/getentries", GetEntries(mock))
+
+	req, _ := http.NewRequest(http.MethodGet, "/getentries", nil)
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	var resp ApiResponse
+	err := json.Unmarshal(w.Body.Bytes(), &resp)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal response: %v", err)
+	}
+
+	if resp.Status != "success" {
+		t.Errorf("Expected success status, got %s", resp.Status)
+	}
+
+	if resp.Message != "Depot entries loaded" {
+		t.Errorf("Expected success message, got %s", resp.Message)
+	}
+
+	if resp.ErrorMessage != "" {
+		t.Errorf("Expected no error message, got %s", resp.ErrorMessage)
+	}
+
+	if resp.Data == nil {
+		t.Error("Expected data in response, got nil")
 	}
 
 }

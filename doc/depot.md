@@ -1,11 +1,14 @@
-## Transaction:
+## Transactions:
 Jeder Kauf (buy) und Verkauf (sell) stellt eine Transaktion dar. Die Transaktionen werden in einer Liste in der Reihefolge ihres Auftretens gespeichert. Zur Zeit wird beim Einfügen einer Transaktion kein Duplikat-Test durchgeführt. Dieser könnte anhand einer Auftragsnummer gemacht werden.
 
 ## Unclosed transactions:
 Sind Transaktionen die noch nicht abgerechnet sind. Bedeutet, das das Asset im Depot vorhanden ist. Die unclosed Transaktionen können nur vom Typ "buy" sein, da bei Verkaufs-Transaktionen "sell" die Abrechnung (Gewinn / Verlust) ausgelöst wird. Mehrere unclosed transaction vom gleichen Asset bilden einen Depoteintrag.
 
-## Realized Gains
+## Realized gains:
 Jede Abrechnung erzeugt einen "Realized Gains" (Gewinn / Verlust) Datensatz.
+
+## Persistenz
+Alle transactions, unclosed transactions und realized gains werden in der Db abgespeichert.
 
 #### Sell Transaktionen lösen eine Abrechnung aus
 Wenn die nächste Transaktion vom Typ "sell" ist, wird zu diesem Asset die erste vorhandene unclosed transaction gesucht.
@@ -23,7 +26,7 @@ Drei mögliche Abrechnungen gibt es dann:
 
 #### Anzahl der sell Assets ist kleiner
 - Gewinn / Verlust ausrechnen
-- Von der Anzahl der buy Assets (unclosed transactions) die sell Assets abziehen und die uclosed tranaction mit ihrer neuen Anzahl der Assets speichern.
+- Von der Anzahl der buy Assets (unclosed transactions) die sell Assets abziehen und die uclosed transaction mit ihrer neuen Anzahl der Assets speichern.
 
 #### Anzahl der sell Assets ist größer
 - Erste unclosed transaction behandeln wie in "Anzahl der Assets ist gleich".
@@ -31,4 +34,4 @@ Drei mögliche Abrechnungen gibt es dann:
 - **Erstellt für jede und jede angefangene Buy-Transaktion eine Abrechnung**
 
 ## Abrechnungen (Realized Gains) und offene Transaktionen (unclosed transactions) und Depotbestand berechnen
-Vor Nutzung des Programms können, wenn vorhanden, bereits getätigten Transaktionen importiert werden. Sollten Transaktionen importiert worden sein, so können Gewinne / Verluste (Abrechnungen), offene Transaktionen und der Depotbestand mit "ComputeAllTransactions" berechnet werden. Die Abrechnungen und die offenen Transaktionen müssen danach persistiert werden, um bei einem Neustart, nicht die Berechnung der Abrechnungen und offenen Transaktionen wiederholen zu müssen. Der Depotbestand wird immer anhand der offenen Transaktionen berechnet. Wenn eine neue Sell-Transaktion hinzu kommt, wird die Abrechnung mit dieser und der passende(n) unclosed transaction(s) berechnet. Handelt es sich um eine Buy-Transaktion, so werden die unclosed transactions aktualisiert. Bei jeder hinzugefügten Transaktion wird der Depotbestand aktualisiert.
+Vor Nutzung des Programms können, wenn vorhanden, bereits getätigten Transaktionen importiert werden. Sollten Transaktionen importiert worden sein, so können Gewinne / Verluste (Abrechnungen), offene Transaktionen und der Depotbestand mit "ComputeAllTransactions" berechnet werden. Die Abrechnungen und die offenen Transaktionen müssen danach persistiert werden, um bei einem Neustart, nicht die Berechnung der Abrechnungen und offenen Transaktionen wiederholen zu müssen. Der Depotbestand wird immer anhand der offenen Transaktionen berechnet. Wenn eine neue Sell-Transaktion hinzu kommt, wird die Abrechnung mit dieser und der passende(n) unclosed transaction(s) berechnet. Dann werden die unclosed transcations aktualisiert. Handelt es sich um eine Buy-Transaktion, so werden nur die unclosed transactions aktualisiert. Bei jeder hinzugefügten Transaktion wird der Depotbestand neu berechnet.

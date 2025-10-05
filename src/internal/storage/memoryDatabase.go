@@ -60,6 +60,10 @@ func (s *MemoryDatabase) ReadAllUnclosedTransactions() (map[string][]Transaction
 	return s.baseDb.loadUnclosedTransactions(s.db)
 }
 
+func (s *MemoryDatabase) RemoveAllUnclosedTransactions() error {
+	return s.baseDb.deleteAllUnclosedTransaction(s.db)
+}
+
 // Wird eigentlich nicht benötigt.
 func (s *MemoryDatabase) ReadAllUnclosedTickerSymbols() ([]string, error) {
 	return s.baseDb.loadUnclosedTickerSymbols(s.db)

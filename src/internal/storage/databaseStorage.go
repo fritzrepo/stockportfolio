@@ -173,6 +173,22 @@ func (s *DatabaseStorage) insertUnclosedTransaction(db *sql.DB, trans Transactio
 	return nil
 }
 
+func (s *DatabaseStorage) deleteAllUnclosedTransaction(db *sql.DB) error {
+	sqlStmt := "DELETE FROM unclosed_trans;"
+	_, err := db.Exec(sqlStmt)
+	if err != nil {
+		return fmt.Errorf("error at delete all unclosed transactions. %w", err)
+	}
+
+	sqlStmt = "DELETE FROM unclosed_assets;"
+	_, err = db.Exec(sqlStmt)
+	if err != nil {
+		return fmt.Errorf("error at delete all unclosed assets. %w", err)
+	}
+
+	return nil
+}
+
 func (s *DatabaseStorage) loadUnclosedTickerSymbols(db *sql.DB) ([]string, error) {
 	tickerSymbols := make([]string, 0)
 

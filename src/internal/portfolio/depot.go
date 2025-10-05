@@ -23,7 +23,7 @@ func (d *DepotEntry) TotalPrice() float64 {
 }
 
 type Depot struct {
-	DepotEntries         map[string]DepotEntry
+	depotEntries         map[string]DepotEntry
 	RealizedGains        []storage.RealizedGain
 	unclosedTransactions map[string][]storage.Transaction
 	uuidGenerator        func() uuid.UUID
@@ -32,12 +32,21 @@ type Depot struct {
 
 func GetDepot(uuidGen func() uuid.UUID, dataStore storage.Store) *Depot {
 	return &Depot{
-		DepotEntries:         make(map[string]DepotEntry),
+		depotEntries:         make(map[string]DepotEntry),
 		RealizedGains:        make([]storage.RealizedGain, 0, 5),
 		unclosedTransactions: make(map[string][]storage.Transaction),
 		uuidGenerator:        uuidGen,
 		store:                dataStore,
 	}
+}
+
+func (d *Depot) CalculateSecuritiesAccountBalance() {
+	//loadUnclosedTransactions()
+	d.createDepotEntries()
+}
+
+func (d *Depot) GetEntries() map[string]DepotEntry {
+	return d.depotEntries
 }
 
 // Diese Funktion berechnet die "Realized Gains" und die "unclosed transactions" aller ihr
@@ -56,26 +65,49 @@ func (d *Depot) ComputeAllTransactions() error {
 	}
 
 	for _, newTransaction := range transactions {
-		d.AddTransaction(newTransaction)
+		d.processNewTransaction(newTransaction)
 	}
+
+	//saveRealizedGains()
+	d.createDepotEntries()
 
 	return nil
 }
 
 func (d *Depot) AddTransaction(newTransaction storage.Transaction) error {
+
+	err := d.processNewTransaction(newTransaction)
+	if err != nil {
+		return err
+	}
+
+	err = d.store.AddTransaction(&newTransaction)
+	if err != nil {
+		return fmt.Errorf("failed to add transaction to store: %w", err)
+	}
+
+	err = d.store.RemoveAllUnclosedTransactions()
+	if err != nil {
+		return fmt.Errorf("failed to remove all unclosed transaction from store: %w", err)
+	}
+
+	//saveRealizedGains()
+	d.createDepotEntries()
+	return nil
+}
+
+func (d *Depot) processNewTransaction(newTransaction storage.Transaction) error {
 	switch newTransaction.TransactionType {
 	case "buy":
 		d.addBuyTransaction(newTransaction)
 	case "sell":
-		d.addSellTransaction(newTransaction)
+		err := d.addSellTransaction(newTransaction)
+		if err != nil {
+			return fmt.Errorf("failed to process sell transaction: %w", err)
+		}
 	default:
 		return errors.New("transaction type not supported")
 	}
-
-	d.store.AddTransaction(&newTransaction)
-
-	//saveRealizedGains()
-	d.createDepotEntries()
 	return nil
 }
 
@@ -94,128 +126,109 @@ func (d *Depot) addBuyTransaction(newTransaction storage.Transaction) {
 	}
 }
 
-func (d *Depot) addSellTransaction(newTransaction storage.Transaction) {
+func (d *Depot) addSellTransaction(newTransaction storage.Transaction) error {
 
 	transactions, exists := d.unclosedTransactions[newTransaction.TickerSymbol]
-	if exists {
-		//FiFo-Prinzip (First in, first out)
-
-		//Ziehe die Anzahl der verkauften Assets von der ersten buy Transaktion ab.
-		//Sollten mehr Assets verkauft werden, als gekauft wurden, dann wird
-		//die nächste buy Transaktion verwendet.
-		modifyTransactions := make([]storage.Transaction, len(transactions))
-
-		_ = copy(modifyTransactions, transactions)
-
-		for _, availableBuyTrans := range transactions {
-			if availableBuyTrans.TransactionType == "buy" {
-				//Buy und sell Transaktionen sind gleich
-				if availableBuyTrans.Quantity == newTransaction.Quantity {
-					//Entferne die Transaktion aus der modifyTransactions
-					filteredTransactions := []storage.Transaction{}
-					for _, transaction := range modifyTransactions {
-						if transaction.Id != availableBuyTrans.Id {
-							filteredTransactions = append(filteredTransactions, transaction)
-						}
-					}
-					modifyTransactions = filteredTransactions
-
-					//Berechne den Gewinn / Verlust
-					d.RealizedGains = append(d.RealizedGains, calculateProfitLoss(d.uuidGenerator, newTransaction, availableBuyTrans))
-					break
-				}
-				//Buy Transaktion ist größer als die Sell Transaktion
-				if availableBuyTrans.Quantity > newTransaction.Quantity {
-					//Berechne den Gewinn / Verlust
-					d.RealizedGains = append(d.RealizedGains, calculateProfitLoss(d.uuidGenerator, newTransaction, availableBuyTrans))
-					//Buy Transaktion verkleinern um die Anzahl der verkauften Assets
-					availableBuyTrans.Quantity -= newTransaction.Quantity
-					//Suche in den modifyTransactions die Transaktion
-					for i, transaction := range modifyTransactions {
-						if transaction.Id == availableBuyTrans.Id {
-							modifyTransactions[i] = availableBuyTrans
-							break
-						}
-					}
-					break
-				}
-				//Buy Transaktion ist kleiner als die Sell Transaktion
-				if availableBuyTrans.Quantity < newTransaction.Quantity {
-
-					//Berechne den Gewinn / Verlust
-					d.RealizedGains = append(d.RealizedGains, calculateProfitLoss(d.uuidGenerator, newTransaction, availableBuyTrans))
-					newTransaction.Quantity -= availableBuyTrans.Quantity
-
-					//Entferne die Transaktion aus der modifyTransactions
-					filteredTransactions := []storage.Transaction{}
-					for _, transaction := range modifyTransactions {
-						if transaction.Id != availableBuyTrans.Id {
-							filteredTransactions = append(filteredTransactions, transaction)
-						}
-					}
-					modifyTransactions = filteredTransactions
-					//Der Rest der Sell transaction muss auf die nächste buy transaction angewendet werden
-					//Daher kein break
-				}
-			} else {
-				//ToDo => Richtige Fehlermeldung / Fehlerbehandlung implementieren
-				fmt.Printf("Transaction is not a buy transaction %s\n", newTransaction.TickerSymbol)
-			}
-		}
-		//Wennn die tansactions leer sind, dann lösche den Eintrag
-		if len(modifyTransactions) == 0 {
-			delete(d.unclosedTransactions, newTransaction.TickerSymbol)
-		} else {
-			//Aktualisiere die Transaktionen
-			d.unclosedTransactions[newTransaction.TickerSymbol] = modifyTransactions
-		}
-
-		//Durchschnittskostenmethode (average cost)
-		//ToDo => Implementieren wenn nötig.
-
-	} else {
-		//ToDo => Richtige Fehlermeldung / Fehlerbehandlung implementieren
-		fmt.Printf("No buy transaction available for this sell transaction %s\n", newTransaction.TickerSymbol)
+	if !exists {
+		return fmt.Errorf("no buy transaction available for this sell transaction %s", newTransaction.TickerSymbol)
 	}
+
+	//FiFo-Prinzip (First in, first out)
+
+	//Ziehe die Anzahl der verkauften Assets von der ersten buy Transaktion ab.
+	//Sollten mehr Assets verkauft werden, als gekauft wurden, dann wird
+	//die nächste buy Transaktion verwendet.
+
+	modifyTransactions := make([]storage.Transaction, len(transactions))
+
+	_ = copy(modifyTransactions, transactions)
+
+	for _, availableBuyTrans := range transactions {
+
+		if availableBuyTrans.TransactionType != "buy" {
+			return fmt.Errorf("transaction is not a buy transaction %s", newTransaction.TickerSymbol)
+		}
+
+		//Buy und sell Transaktionen sind gleich
+		if availableBuyTrans.Quantity == newTransaction.Quantity {
+			//Entferne die Transaktion aus der modifyTransactions
+			filteredTransactions := []storage.Transaction{}
+			for _, transaction := range modifyTransactions {
+				if transaction.Id != availableBuyTrans.Id {
+					filteredTransactions = append(filteredTransactions, transaction)
+				}
+			}
+			modifyTransactions = filteredTransactions
+
+			//Berechne den Gewinn / Verlust
+			d.RealizedGains = append(d.RealizedGains, calculateProfitLoss(d.uuidGenerator, newTransaction, availableBuyTrans))
+			break
+		}
+		//Buy Transaktion ist größer als die Sell Transaktion
+		if availableBuyTrans.Quantity > newTransaction.Quantity {
+			//Berechne den Gewinn / Verlust
+			d.RealizedGains = append(d.RealizedGains, calculateProfitLoss(d.uuidGenerator, newTransaction, availableBuyTrans))
+			//Buy Transaktion verkleinern um die Anzahl der verkauften Assets
+			availableBuyTrans.Quantity -= newTransaction.Quantity
+			//Suche in den modifyTransactions die Transaktion
+			for i, transaction := range modifyTransactions {
+				if transaction.Id == availableBuyTrans.Id {
+					modifyTransactions[i] = availableBuyTrans
+					break
+				}
+			}
+			break
+		}
+		//Buy Transaktion ist kleiner als die Sell Transaktion
+		if availableBuyTrans.Quantity < newTransaction.Quantity {
+
+			//Berechne den Gewinn / Verlust
+			d.RealizedGains = append(d.RealizedGains, calculateProfitLoss(d.uuidGenerator, newTransaction, availableBuyTrans))
+			newTransaction.Quantity -= availableBuyTrans.Quantity
+
+			//Entferne die Transaktion aus der modifyTransactions
+			filteredTransactions := []storage.Transaction{}
+			for _, transaction := range modifyTransactions {
+				if transaction.Id != availableBuyTrans.Id {
+					filteredTransactions = append(filteredTransactions, transaction)
+				}
+			}
+			modifyTransactions = filteredTransactions
+			//Der Rest der Sell transaction muss auf die nächste buy transaction angewendet werden
+			//Daher kein break
+		}
+	}
+
+	//Wennn die tansactions leer sind, dann lösche den Eintrag
+	if len(modifyTransactions) == 0 {
+		delete(d.unclosedTransactions, newTransaction.TickerSymbol)
+	} else {
+		//Aktualisiere die Transaktionen
+		d.unclosedTransactions[newTransaction.TickerSymbol] = modifyTransactions
+	}
+
+	//Durchschnittskostenmethode (average cost)
+	//ToDo => Implementieren wenn nötig.
+
+	return nil
 }
 
 func (d *Depot) createDepotEntries() {
-	clear(d.DepotEntries)
+	clear(d.depotEntries)
 	for _, transactions := range d.unclosedTransactions {
 		for _, transaction := range transactions {
 			//Wenn das Asset noch nicht im Depot ist, dann füge es hinzu
-			entry, exists := d.DepotEntries[transaction.TickerSymbol]
+			entry, exists := d.depotEntries[transaction.TickerSymbol]
 			if !exists {
-				d.DepotEntries[transaction.TickerSymbol] = DepotEntry{AssetType: transaction.AssetType, Asset: transaction.Asset,
+				d.depotEntries[transaction.TickerSymbol] = DepotEntry{AssetType: transaction.AssetType, Asset: transaction.Asset,
 					TickerSymbol: transaction.TickerSymbol, Quantity: transaction.Quantity, Price: transaction.Price,
 					Currency: transaction.Currency}
 			} else {
 				//Wenn das Asset schon im Depot ist, dann aktualisiere den (durchschnitts) Preis und die Anzahl
 				entry.Price = (entry.Price*entry.Quantity + transaction.Price*transaction.Quantity) / (entry.Quantity + transaction.Quantity)
 				entry.Quantity += transaction.Quantity
-				d.DepotEntries[transaction.TickerSymbol] = entry
+				d.depotEntries[transaction.TickerSymbol] = entry
 			}
 		}
 	}
 }
-
-func (d *Depot) CalculateSecuritiesAccountBalance() {
-	loadUnclosedTransactions()
-	d.createDepotEntries()
-}
-
-// func saveUnclosedTransactions() {
-// 	//ToDo => Implementieren
-// }
-
-func loadUnclosedTransactions() {
-	//ToDo => Implementieren
-}
-
-// func saveRealizedGains() {
-// 	//ToDo => Implementieren
-// }
-
-// func loadRealizedGains() {
-// 	//ToDo => Implementieren
-// }

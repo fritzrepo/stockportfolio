@@ -61,6 +61,12 @@ func (s *FileDatabase) AddUnclosedTransaction(asset Transaction) error {
 	})
 }
 
+func (s *FileDatabase) RemoveAllUnclosedTransactions() error {
+	return s.withDatabase(func(db *sql.DB) error {
+		return s.baseDb.deleteAllUnclosedTransaction(db)
+	})
+}
+
 func (s *FileDatabase) ReadAllUnclosedTickerSymbols() ([]string, error) {
 	var tickerSymbols []string
 

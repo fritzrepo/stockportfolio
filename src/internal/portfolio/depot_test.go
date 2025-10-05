@@ -71,7 +71,7 @@ func TestComputeTransactions(t *testing.T) {
 			}
 
 			//Check the depot entries
-			result := dep.DepotEntries
+			result := dep.depotEntries
 
 			for key, expectedEntry := range tt.ExpectedDepot {
 				resultEntry, exists := result[key]

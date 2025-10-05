@@ -30,6 +30,19 @@ func PingHandler(appConfig *config.Config) gin.HandlerFunc {
 	}
 }
 
+func GetEntries(depot portfolio.Portfolio) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		response := &ApiResponse{
+			Status:       "success",
+			Message:      "Depot entries loaded",
+			ErrorMessage: "",
+			ErrorDetails: "",
+			Data:         depot.GetEntries(),
+		}
+		c.JSON(http.StatusOK, response)
+	}
+}
+
 func AddTransactionHandler(depot portfolio.Portfolio) gin.HandlerFunc {
 	return func(c *gin.Context) {
 

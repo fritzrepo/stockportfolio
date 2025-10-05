@@ -23,6 +23,7 @@ func main() {
 	router := gin.Default()
 
 	router.GET("/ping", handlers.PingHandler(appConfig))
+	router.GET("/api/depot/getentries", handlers.GetEntries(depot))
 	router.POST("/api/depot/addTransaction", handlers.AddTransactionHandler(depot))
 
 	router.Run()

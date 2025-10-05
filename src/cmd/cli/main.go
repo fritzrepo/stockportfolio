@@ -108,7 +108,7 @@ func main() {
 			panic(err)
 		}
 		fmt.Println("Depot:")
-		fmt.Println(dep.DepotEntries)
+		fmt.Println(dep.GetEntries())
 		fmt.Println("Realized Gains:")
 		fmt.Println(dep.RealizedGains)
 		fmt.Println("End")

@@ -7,6 +7,11 @@ Accept: application/json
 
 ###
 
+GET {{serviceApi_HostAddress}}/api/depot/getentries
+Accept: application/json
+
+###
+
 POST {{serviceApi_HostAddress}}/api/depot/addTransaction
 Content-Type: application/json
 Accept: application/json
@@ -17,8 +22,8 @@ Accept: application/json
   "assetType": "stock",
   "asset": "Apple Inc.",
   "tickerSymbol": "AAPL",
-  "quantity": 10,
-  "price": 150.00,
+  "quantity": 20,
+  "price": 300.00,
   "fees": 5.00,
   "currency": "EUR"
 }

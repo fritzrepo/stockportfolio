@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/fritzrepo/stockportfolio/internal/portfolio"
 	"github.com/fritzrepo/stockportfolio/internal/storage"
 	"github.com/gin-gonic/gin"
 )
@@ -16,10 +17,15 @@ import (
 // mockDepot implements the AddTransaction method for testing
 type mockDepot struct {
 	addTransaction func(storage.Transaction) error
+	getEntries     func() map[string]portfolio.DepotEntry
 }
 
 func (m *mockDepot) AddTransaction(t storage.Transaction) error {
 	return m.addTransaction(t)
+}
+
+func (m *mockDepot) GetEntries() map[string]portfolio.DepotEntry {
+	return m.getEntries()
 }
 
 func TestAddTransactionHandler_Success(t *testing.T) {
@@ -28,6 +34,9 @@ func TestAddTransactionHandler_Success(t *testing.T) {
 	mock := &mockDepot{
 		addTransaction: func(tr storage.Transaction) error {
 			return nil
+		},
+		getEntries: func() map[string]portfolio.DepotEntry {
+			return make(map[string]portfolio.DepotEntry)
 		},
 	}
 

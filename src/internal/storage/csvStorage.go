@@ -71,7 +71,6 @@ func (s *CsvStorage) ReadAllTransactions() ([]Transaction, error) {
 		// }
 		transaction.Currency = values[8]
 		transaction.Id = s.uuidGenerator()
-		transaction.IsClosed = false
 		transactions = append(transactions, transaction)
 	}
 	return transactions, nil

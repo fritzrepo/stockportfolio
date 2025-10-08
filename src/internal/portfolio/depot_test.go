@@ -137,7 +137,6 @@ func TestAddTransactions(t *testing.T) {
 	err := dep.AddTransaction(storage.Transaction{
 		Date:            time.Date(2023, 10, 1, 12, 0, 0, 0, time.UTC),
 		TransactionType: "buy",
-		IsClosed:        false,
 		AssetType:       "stock",
 		Asset:           "Apple",
 		TickerSymbol:    "AAPL",
@@ -153,7 +152,6 @@ func TestAddTransactions(t *testing.T) {
 	err = dep.AddTransaction(storage.Transaction{
 		Date:            time.Date(2023, 11, 1, 14, 0, 0, 0, time.UTC),
 		TransactionType: "sell",
-		IsClosed:        false,
 		AssetType:       "stock",
 		Asset:           "Apple",
 		TickerSymbol:    "AAPL",

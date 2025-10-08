@@ -32,7 +32,6 @@ func TestInsertTransaction(t *testing.T) {
 		//Id:            uuid.New(), // Wird automatisch generiert.
 		Date:            time.Date(2023, 10, 1, 12, 0, 0, 0, time.UTC),
 		TransactionType: "buy",
-		IsClosed:        false,
 		AssetType:       "stock",
 		Asset:           "Apple",
 		TickerSymbol:    "AAPL",
@@ -53,7 +52,6 @@ func TestInsertTransaction(t *testing.T) {
 
 	if transactions[0].Date != transaction.Date ||
 		transactions[0].TransactionType != transaction.TransactionType ||
-		transactions[0].IsClosed != transaction.IsClosed ||
 		transactions[0].AssetType != transaction.AssetType ||
 		transactions[0].Asset != transaction.Asset ||
 		transactions[0].TickerSymbol != transaction.TickerSymbol ||
@@ -72,7 +70,6 @@ func TestInsertUclosedTransaction(t *testing.T) {
 		//Id:            uuid.New(), // Wird automatisch generiert.
 		Date:            time.Date(2023, 10, 1, 12, 0, 0, 0, time.UTC),
 		TransactionType: "buy",
-		IsClosed:        false,
 		AssetType:       "stock",
 		Asset:           "Apple",
 		TickerSymbol:    "AAPL",
@@ -115,7 +112,6 @@ func TestInsertUclosedTransaction(t *testing.T) {
 		//Id:            uuid.New(), // Wird automatisch generiert.
 		Date:            time.Date(2022, 11, 7, 12, 0, 0, 0, time.UTC),
 		TransactionType: "buy",
-		IsClosed:        false,
 		AssetType:       "stock",
 		Asset:           "BASF",
 		TickerSymbol:    "BAS1",
@@ -147,7 +143,6 @@ func TestInsertRealizedGains(t *testing.T) {
 		//Id:              uuid.New(), // Wird automatisch generiert.
 		Date:            time.Date(2023, 10, 1, 12, 0, 0, 0, time.UTC),
 		TransactionType: "buy",
-		IsClosed:        false,
 		AssetType:       "stock",
 		Asset:           "Apple",
 		TickerSymbol:    "AAPL",
@@ -165,7 +160,6 @@ func TestInsertRealizedGains(t *testing.T) {
 		//Id:              uuid.New(), // Wird automatisch generiert.
 		Date:            time.Date(2023, 11, 1, 12, 0, 0, 0, time.UTC),
 		TransactionType: "sell",
-		IsClosed:        false,
 		AssetType:       "stock",
 		Asset:           "Apple",
 		TickerSymbol:    "AAPL",

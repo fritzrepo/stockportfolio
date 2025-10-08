@@ -21,7 +21,7 @@ func (s *DatabaseStorage) createDatabase(db *sql.DB) error {
 	}
 
 	// Create the transactions table
-	sqlStmt = "CREATE TABLE transactions (id TEXT(36) not null primary key, date DATETIME, transactionType TEXT, isClosed INTEGER, " +
+	sqlStmt = "CREATE TABLE transactions (id TEXT(36) not null primary key, date DATETIME, transactionType TEXT, " +
 		"assetType TEXT, asset TEXT, tickerSymbol TEXT, quantity REAL, price REAL, fees REAL, currency TEXT);"
 	_, err = db.Exec(sqlStmt)
 	if err != nil {
@@ -47,7 +47,7 @@ func (s *DatabaseStorage) createDatabase(db *sql.DB) error {
 	// Create the unclosed_transactions table
 	sqlStmt = "CREATE TABLE unclosed_trans (unclosed_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
 		"asset_id INTEGER NOT NULL, " +
-		"transaction_id TEXT, date DATETIME, transactionType TEXT, isClosed INTEGER, " +
+		"transaction_id TEXT, date DATETIME, transactionType TEXT, " +
 		"assetType TEXT, asset TEXT, tickerSymbol TEXT, quantity REAL, price REAL, fees REAL, currency TEXT, " +
 		"FOREIGN KEY (asset_id) REFERENCES unclosed_assets(asset_id) ON DELETE CASCADE);"
 	_, err = db.Exec(sqlStmt)
@@ -76,12 +76,11 @@ func (s *DatabaseStorage) createDatabase(db *sql.DB) error {
 
 func (s *DatabaseStorage) insertTransaction(db *sql.DB, transaction *Transaction) error {
 	transaction.Id = s.uuidGenerator()
-	sqlStmt := "INSERT INTO transactions (id, date, transactionType, isClosed, assetType, asset, tickerSymbol, quantity, price, fees, currency) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+	sqlStmt := "INSERT INTO transactions (id, date, transactionType, assetType, asset, tickerSymbol, quantity, price, fees, currency) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
 	_, err := db.Exec(sqlStmt,
 		transaction.Id,
 		transaction.Date,
 		transaction.TransactionType,
-		transaction.IsClosed,
 		transaction.AssetType,
 		transaction.Asset,
 		transaction.TickerSymbol,
@@ -99,7 +98,7 @@ func (s *DatabaseStorage) loadAllTransactions(db *sql.DB) ([]Transaction, error)
 
 	transactions := make([]Transaction, 0)
 
-	rows, err := db.Query("SELECT id, date, transactionType, isClosed, assetType, asset, tickerSymbol, quantity, price, fees, currency FROM transactions")
+	rows, err := db.Query("SELECT id, date, transactionType, assetType, asset, tickerSymbol, quantity, price, fees, currency FROM transactions")
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +110,6 @@ func (s *DatabaseStorage) loadAllTransactions(db *sql.DB) ([]Transaction, error)
 			&transaction.Id,
 			&transaction.Date,
 			&transaction.TransactionType,
-			&transaction.IsClosed,
 			&transaction.AssetType,
 			&transaction.Asset,
 			&transaction.TickerSymbol,
@@ -151,13 +149,12 @@ func (s *DatabaseStorage) insertUnclosedTransaction(db *sql.DB, trans Transactio
 	}
 
 	// Insert the transaction into unclosed
-	sqlStmt = "INSERT INTO unclosed_trans (asset_id, transaction_id, date, transactionType, isClosed, assetType, asset, tickerSymbol, quantity, price, fees, currency) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+	sqlStmt = "INSERT INTO unclosed_trans (asset_id, transaction_id, date, transactionType, assetType, asset, tickerSymbol, quantity, price, fees, currency) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
 	_, err = db.Exec(sqlStmt,
 		assetId,
 		trans.Id,
 		trans.Date,
 		trans.TransactionType,
-		trans.IsClosed,
 		trans.AssetType,
 		trans.Asset,
 		trans.TickerSymbol,
@@ -221,7 +218,7 @@ func (s *DatabaseStorage) loadUnclosedTransactions(db *sql.DB) (map[string][]Tra
 	}
 
 	for _, tickerSymbol := range tickerSymbols {
-		sqlStmt := `SELECT transaction_id, date, transactionType, isClosed, assetType, asset, tickerSymbol, 
+		sqlStmt := `SELECT transaction_id, date, transactionType, assetType, asset, tickerSymbol, 
 		quantity, price, fees, currency FROM unclosed_trans 
 		WHERE asset_id = (SELECT asset_id FROM unclosed_assets WHERE ticker_symbol = ?);`
 
@@ -237,7 +234,6 @@ func (s *DatabaseStorage) loadUnclosedTransactions(db *sql.DB) (map[string][]Tra
 				&transaction.Id,
 				&transaction.Date,
 				&transaction.TransactionType,
-				&transaction.IsClosed,
 				&transaction.AssetType,
 				&transaction.Asset,
 				&transaction.TickerSymbol,

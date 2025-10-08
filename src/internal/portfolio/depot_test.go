@@ -8,10 +8,26 @@ import (
 	"os"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/fritzrepo/stockportfolio/internal/storage"
 	"github.com/fritzrepo/stockportfolio/internal/testutil"
 )
+
+func setupTestStore(t *testing.T) storage.Store {
+	var uuidGenerator = testutil.NewMockUUIDGenerator()
+	store := storage.GetMemoryDatabase(uuidGenerator.GetUUID)
+	store.Open()
+	err := store.CreateDatabase()
+	if err != nil {
+		t.Fatalf("Failed to create database: %v", err)
+	}
+	// Cleanup registrieren. Wird nach jedem Test ausgeführt.
+	t.Cleanup(func() {
+		store.Close()
+	})
+	return store
+}
 
 // TestComputeTransactions
 func TestComputeTransactions(t *testing.T) {
@@ -108,6 +124,59 @@ func TestComputeTransactions(t *testing.T) {
 				}
 			}
 		})
+	}
+
+}
+
+// Test addTransaction
+func TestAddTransactions(t *testing.T) {
+	var uuidGenerator = testutil.NewMockUUIDGenerator()
+	store := setupTestStore(t)
+	dep := GetDepot(uuidGenerator.GetUUID, store)
+
+	err := dep.AddTransaction(storage.Transaction{
+		Date:            time.Date(2023, 10, 1, 12, 0, 0, 0, time.UTC),
+		TransactionType: "buy",
+		IsClosed:        false,
+		AssetType:       "stock",
+		Asset:           "Apple",
+		TickerSymbol:    "AAPL",
+		Quantity:        10,
+		Price:           150,
+		Fees:            1.5,
+		Currency:        "USD"})
+
+	if err != nil {
+		t.Fatalf("Failed to add transaction: %v", err)
+	}
+
+	err = dep.AddTransaction(storage.Transaction{
+		Date:            time.Date(2023, 11, 1, 14, 0, 0, 0, time.UTC),
+		TransactionType: "sell",
+		IsClosed:        false,
+		AssetType:       "stock",
+		Asset:           "Apple",
+		TickerSymbol:    "AAPL",
+		Quantity:        5,
+		Price:           200,
+		Fees:            1.5,
+		Currency:        "USD"})
+
+	if err != nil {
+		t.Fatalf("Failed to add transaction: %v", err)
+	}
+
+	if len(dep.RealizedGains) != 1 {
+		t.Errorf("Expected 1 realized gain, but got %d", len(dep.RealizedGains))
+	} else {
+		gain := dep.RealizedGains[0]
+		if gain.Asset != "Apple" {
+			t.Errorf("Realized gain values do not match expected values: %+v", gain)
+		}
+	}
+
+	if len(dep.depotEntries) != 1 {
+		t.Errorf("Expected depot to have 1 entry after selling all shares, but got %d entries", len(dep.depotEntries))
 	}
 
 }

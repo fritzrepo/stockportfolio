@@ -30,6 +30,7 @@ jobs:
       uses: actions/setup-go@v5
       with:
         go-version-file: 'src/go.mod'
+        cache: false
       env:
         GO111MODULE: on
         GOMODCACHE: ~/go/pkg/mod

@@ -1,9 +1,12 @@
 package storage
 
+import "time"
+
 type Store interface {
 	Ping() error
 	CreateDatabase() error
 	AddTransaction(transaction *Transaction) error
+	LoadTransactionByParams(date time.Time, transType string, tickSymbol string) (*Transaction, error)
 	ReadAllTransactions() ([]Transaction, error)
 	AddUnclosedTransaction(asset Transaction) error
 	RemoveAllUnclosedTransactions() error

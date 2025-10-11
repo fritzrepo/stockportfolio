@@ -211,5 +211,46 @@ func TestInsertRealizedGains(t *testing.T) {
 		realizedGains[0].Currency != gain.Currency {
 		t.Errorf("Expected %+v, but got %+v", gain, realizedGains[0])
 	}
+}
 
+func TestLoadTransactionByParams(t *testing.T) {
+	store := setupTestStore(t)
+
+	transaction := &Transaction{
+		//Id:            uuid.New(), // Wird automatisch generiert.
+		Date:            time.Date(2023, 10, 1, 12, 0, 0, 0, time.UTC),
+		TransactionType: "buy",
+		AssetType:       "stock",
+		Asset:           "Apple",
+		TickerSymbol:    "AAPL",
+		Quantity:        10,
+		Price:           150,
+		Fees:            1.5,
+		Currency:        "USD"}
+
+	err := store.AddTransaction(transaction)
+	if err != nil {
+		t.Errorf("Failed to insert transaction: %v", err)
+	}
+
+	loadedTransaction, err := store.LoadTransactionByParams(transaction.Date, transaction.TransactionType, transaction.TickerSymbol)
+	if err != nil {
+		t.Errorf("Failed to load transaction by params: %v", err)
+	}
+	if loadedTransaction == nil {
+		t.Error("Loaded transaction is nil")
+		return
+	}
+	if *loadedTransaction != *transaction {
+		t.Errorf("Loaded transaction does not match original: %+v != %+v", loadedTransaction, transaction)
+	}
+
+	//Teste das Laden einer nicht existierenden Transaktion
+	loadedTransaction, err = store.LoadTransactionByParams(time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC), "sell", "MSFT")
+	if err != nil {
+		t.Errorf("Failed to load transaction by params: %v", err)
+	}
+	if loadedTransaction != nil {
+		t.Errorf("Expected nil for non-existing transaction, but got: %+v", loadedTransaction)
+	}
 }

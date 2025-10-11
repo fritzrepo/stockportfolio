@@ -178,3 +178,31 @@ func TestAddTransactions(t *testing.T) {
 	}
 
 }
+
+func TestDoNotAddAnExistingTransaction(t *testing.T) {
+	var uuidGenerator = testutil.NewMockUUIDGenerator()
+	store := setupTestStore(t)
+	dep := GetDepot(uuidGenerator.GetUUID, store)
+
+	transaction := storage.Transaction{
+		Date:            time.Date(2023, 10, 1, 12, 0, 0, 0, time.UTC),
+		TransactionType: "buy",
+		AssetType:       "stock",
+		Asset:           "Apple",
+		TickerSymbol:    "AAPL",
+		Quantity:        10,
+		Price:           150,
+		Fees:            1.5,
+		Currency:        "USD"}
+
+	err := dep.AddTransaction(transaction)
+	if err != nil {
+		t.Fatalf("Failed to add transaction: %v", err)
+	}
+
+	//Versuche die gleiche Transaktion erneut hinzuzufügen
+	err = dep.AddTransaction(transaction)
+	if err == nil {
+		t.Fatalf("Expected error when adding an existing transaction, but got none")
+	}
+}

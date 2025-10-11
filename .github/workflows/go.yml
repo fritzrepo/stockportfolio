@@ -30,7 +30,7 @@ jobs:
       uses: actions/setup-go@v5
       with:
         go-version-file: 'src/go.mod'
-        cache: false
+        cache: false  # Disable built-in caching to use custom cache step
 
     - name: Download dependencies
       working-directory: src

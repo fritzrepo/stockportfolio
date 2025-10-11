@@ -81,7 +81,16 @@ func (d *Depot) ComputeAllTransactions() error {
 
 func (d *Depot) AddTransaction(newTransaction storage.Transaction) error {
 
-	err := d.processNewTransaction(newTransaction)
+	//Über prüfen ob die Transaction schon existiert
+	transaction, err := d.store.LoadTransactionByParams(newTransaction.Date, newTransaction.TransactionType, newTransaction.TickerSymbol)
+	if err != nil {
+		return err
+	}
+	if transaction != nil {
+		return errors.New("transaction already exists")
+	}
+
+	err = d.processNewTransaction(newTransaction)
 	if err != nil {
 		return err
 	}

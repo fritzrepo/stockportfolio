@@ -3,6 +3,7 @@ package storage
 import (
 	"database/sql"
 	"errors"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -46,6 +47,10 @@ func (s *MemoryDatabase) Close() error {
 
 func (s *MemoryDatabase) AddTransaction(transaction *Transaction) error {
 	return s.baseDb.insertTransaction(s.db, transaction)
+}
+
+func (s *MemoryDatabase) LoadTransactionByParams(date time.Time, transType string, tickSymbol string) (*Transaction, error) {
+	return s.baseDb.loadTransactionByParams(s.db, date, transType, tickSymbol)
 }
 
 func (s *MemoryDatabase) ReadAllTransactions() ([]Transaction, error) {

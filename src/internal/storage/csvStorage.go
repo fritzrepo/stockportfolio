@@ -81,6 +81,11 @@ func (s *CsvStorage) AddUnclosedTransaction(asset Transaction) error {
 	return errors.New("AddUnclosedTransaction not implemented for CSV storage")
 }
 
+func (s *CsvStorage) LoadTransactionByParams(date time.Time, transType string, tickSymbol string) (*Transaction, error) {
+	// Not implemented for CSV storage
+	return nil, errors.New("LoadTransactionByParams not implemented for CSV storage")
+}
+
 func (s *CsvStorage) RemoveAllUnclosedTransactions() error {
 	// Not implemented for CSV storage
 	return errors.New("RemoveAllUnclosedTransactions not implemented for CSV storage")

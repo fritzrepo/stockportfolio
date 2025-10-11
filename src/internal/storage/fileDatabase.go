@@ -2,6 +2,7 @@ package storage
 
 import (
 	"database/sql"
+	"time"
 
 	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
@@ -38,6 +39,19 @@ func (s *FileDatabase) AddTransaction(transaction *Transaction) error {
 	return s.withDatabase(func(db *sql.DB) error {
 		return s.baseDb.insertTransaction(db, transaction)
 	})
+}
+
+func (s *FileDatabase) LoadTransactionByParams(date time.Time, transType string, tickSymbol string) (*Transaction, error) {
+	var transaction *Transaction
+	err := s.withDatabase(func(db *sql.DB) error {
+		var errorSql error
+		transaction, errorSql = s.baseDb.loadTransactionByParams(db, date, transType, tickSymbol)
+		return errorSql
+	})
+	if err != nil {
+		return nil, err
+	}
+	return transaction, nil
 }
 
 func (s *FileDatabase) ReadAllTransactions() ([]Transaction, error) {

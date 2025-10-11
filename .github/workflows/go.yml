@@ -22,9 +22,9 @@ jobs:
         go-version: '1.20'
 
     - name: Build
-      working-directory: /workspaces/stockportfolio/src
+      working-directory: src
       run: go build -v ./...
 
     - name: Test
-      working-directory: /workspaces/stockportfolio/src
+      working-directory: src
       run: go test -v ./...

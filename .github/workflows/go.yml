@@ -20,6 +20,12 @@ jobs:
       uses: actions/setup-go@v5
       with:
         go-version-file: 'src/go.mod'
+      env:
+        GO111MODULE: on
+        GOMODCACHE: ~/go/pkg/mod
+
+    - name: Verify go.sum exists
+      run: ls -la src/
 
     - name: Cache Go modules
       uses: actions/cache@v4

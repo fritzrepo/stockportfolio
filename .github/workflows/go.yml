@@ -31,12 +31,6 @@ jobs:
       with:
         go-version-file: 'src/go.mod'
         cache: false
-      env:
-        GO111MODULE: on
-        GOMODCACHE: ~/go/pkg/mod
-
-    - name: Verify go.sum exists
-      run: ls -la src/
 
     - name: Download dependencies
       working-directory: src

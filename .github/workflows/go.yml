@@ -16,6 +16,16 @@ jobs:
     steps:
     - uses: actions/checkout@v5
 
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/go/pkg/mod
+          ~/.cache/go-build
+        key: ${{ runner.os }}-go-${{ hashFiles('src/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
@@ -26,16 +36,6 @@ jobs:
 
     - name: Verify go.sum exists
       run: ls -la src/
-
-    - name: Cache Go modules
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/go/pkg/mod
-          ~/.cache/go-build
-        key: ${{ runner.os }}-go-${{ hashFiles('src/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
 
     - name: Download dependencies
       working-directory: src

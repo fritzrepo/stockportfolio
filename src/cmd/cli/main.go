@@ -7,7 +7,6 @@ import (
 	"github.com/fritzrepo/stockportfolio/internal/config"
 	"github.com/fritzrepo/stockportfolio/internal/portfolio"
 	"github.com/fritzrepo/stockportfolio/internal/storage"
-	"github.com/google/uuid"
 )
 
 func main() {
@@ -45,7 +44,7 @@ func main() {
 
 	if buildDb {
 		fmt.Println("Building database")
-		store := storage.GetFileDatabase(config.DatabaseFilePath, uuid.New)
+		store := storage.GetFileDatabase(config.DatabaseFilePath)
 		err := store.CreateDatabase()
 		if err != nil {
 			fmt.Println("Database not created or already exists")
@@ -56,7 +55,7 @@ func main() {
 
 	if fillDb {
 		fmt.Println("Fill up database")
-		store := storage.GetCsvStorage(config.TransactionFilePath, uuid.New)
+		store := storage.GetCsvStorage(config.TransactionFilePath)
 		transactions, err := store.ReadAllTransactions()
 		if err != nil {
 			// Fehlerbehandlung
@@ -64,7 +63,7 @@ func main() {
 			panic(err)
 		}
 
-		dbStore := storage.GetFileDatabase(config.DatabaseFilePath, uuid.New)
+		dbStore := storage.GetFileDatabase(config.DatabaseFilePath)
 
 		for _, transaction := range transactions {
 			fmt.Println(transaction)
@@ -79,7 +78,7 @@ func main() {
 
 	if readTransaktions {
 		fmt.Println("Reading transactions from database")
-		store := storage.GetFileDatabase(config.DatabaseFilePath, uuid.New)
+		store := storage.GetFileDatabase(config.DatabaseFilePath)
 
 		transactions, err := store.ReadAllTransactions()
 		if err != nil {
@@ -97,9 +96,9 @@ func main() {
 
 	if compute {
 		fmt.Println("Computing transactions")
-		store := storage.GetCsvStorage(config.TransactionFilePath, uuid.New)
+		store := storage.GetCsvStorage(config.TransactionFilePath)
 
-		dep := portfolio.GetDepot(uuid.New, &store)
+		dep := portfolio.GetDepot(&store)
 
 		err = dep.ComputeAllTransactions()
 		if err != nil {
@@ -110,7 +109,8 @@ func main() {
 		fmt.Println("Depot:")
 		fmt.Println(dep.GetEntries())
 		fmt.Println("Realized Gains:")
-		fmt.Println(dep.RealizedGains)
+		realizedGains, _ := dep.GetAllRealizedGains()
+		fmt.Println(realizedGains)
 		fmt.Println("End")
 	}
 

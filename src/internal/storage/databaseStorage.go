@@ -4,12 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type DatabaseStorage struct {
-	uuidGenerator func() uuid.UUID
 }
 
 func (s *DatabaseStorage) createDatabase(db *sql.DB) error {
@@ -76,7 +73,6 @@ func (s *DatabaseStorage) createDatabase(db *sql.DB) error {
 }
 
 func (s *DatabaseStorage) insertTransaction(db *sql.DB, transaction *Transaction) error {
-	transaction.Id = s.uuidGenerator()
 	sqlStmt := "INSERT INTO transactions (id, date, transactionType, assetType, asset, tickerSymbol, quantity, price, fees, currency) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
 	_, err := db.Exec(sqlStmt,
 		transaction.Id,
@@ -96,9 +92,7 @@ func (s *DatabaseStorage) insertTransaction(db *sql.DB, transaction *Transaction
 }
 
 func (s *DatabaseStorage) loadAllTransactions(db *sql.DB) ([]Transaction, error) {
-
 	transactions := make([]Transaction, 0)
-
 	rows, err := db.Query("SELECT id, date, transactionType, assetType, asset, tickerSymbol, quantity, price, fees, currency FROM transactions")
 	if err != nil {
 		return nil, err
@@ -128,9 +122,7 @@ func (s *DatabaseStorage) loadAllTransactions(db *sql.DB) ([]Transaction, error)
 
 func (s *DatabaseStorage) loadTransactionByParams(db *sql.DB, date time.Time, transType string, tickSymbol string) (*Transaction, error) {
 	var transaction Transaction
-
 	row := db.QueryRow("SELECT id, date, transactionType, assetType, asset, tickerSymbol, quantity, price, fees, currency FROM transactions WHERE date = ? AND transactionType = ? AND tickerSymbol = ?", date, transType, tickSymbol)
-
 	err := row.Scan(
 		&transaction.Id,
 		&transaction.Date,
@@ -278,7 +270,6 @@ func (s *DatabaseStorage) loadUnclosedTransactions(db *sql.DB) (map[string][]Tra
 }
 
 func (s *DatabaseStorage) insertRealizedGain(db *sql.DB, realizedGain *RealizedGain) error {
-	realizedGain.Id = s.uuidGenerator()
 	sqlStmt := "INSERT INTO realized_gains (id, sellTransactionId, buyTransactionId, asset, amount, isProfit, taxRate, quantity, buyPrice, sellPrice, currency) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
 	_, err := db.Exec(sqlStmt,
 		realizedGain.Id,

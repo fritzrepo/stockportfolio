@@ -24,18 +24,14 @@ func (d *DepotEntry) TotalPrice() float64 {
 
 type Depot struct {
 	depotEntries         map[string]DepotEntry
-	RealizedGains        []storage.RealizedGain
 	unclosedTransactions map[string][]storage.Transaction
-	uuidGenerator        func() uuid.UUID
 	store                storage.Store
 }
 
-func GetDepot(uuidGen func() uuid.UUID, dataStore storage.Store) *Depot {
+func GetDepot(dataStore storage.Store) *Depot {
 	return &Depot{
 		depotEntries:         make(map[string]DepotEntry),
-		RealizedGains:        make([]storage.RealizedGain, 0, 5),
 		unclosedTransactions: make(map[string][]storage.Transaction),
-		uuidGenerator:        uuidGen,
 		store:                dataStore,
 	}
 }
@@ -52,6 +48,14 @@ func (d *Depot) CalculateSecuritiesAccountBalance() error {
 
 func (d *Depot) GetEntries() map[string]DepotEntry {
 	return d.depotEntries
+}
+
+func (d *Depot) GetAllRealizedGains() ([]storage.RealizedGain, error) {
+	realizedGains, err := d.store.ReadAllRealizedGains()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read realized gains from store: %w", err)
+	}
+	return realizedGains, nil
 }
 
 // Diese Funktion berechnet die "Realized Gains" und die "unclosed transactions" aller ihr
@@ -81,7 +85,7 @@ func (d *Depot) ComputeAllTransactions() error {
 
 func (d *Depot) AddTransaction(newTransaction storage.Transaction) error {
 
-	//Über prüfen ob die Transaction schon existiert
+	//Überprüfen, ob die Transaction schon existiert
 	transaction, err := d.store.LoadTransactionByParams(newTransaction.Date, newTransaction.TransactionType, newTransaction.TickerSymbol)
 	if err != nil {
 		return err
@@ -90,7 +94,9 @@ func (d *Depot) AddTransaction(newTransaction storage.Transaction) error {
 		return errors.New("transaction already exists")
 	}
 
-	err = d.processNewTransaction(newTransaction)
+	newTransaction.Id = uuid.New()
+
+	isNewRealizedGain, newRealizedGain, err := d.processNewTransaction(newTransaction)
 	if err != nil {
 		return err
 	}
@@ -98,6 +104,14 @@ func (d *Depot) AddTransaction(newTransaction storage.Transaction) error {
 	err = d.store.AddTransaction(&newTransaction)
 	if err != nil {
 		return fmt.Errorf("failed to add transaction to store: %w", err)
+	}
+
+	if isNewRealizedGain {
+		newRealizedGain.Id = uuid.New()
+		err = d.store.AddRealizedGain(newRealizedGain)
+		if err != nil {
+			return fmt.Errorf("failed to add realized gain to store: %w", err)
+		}
 	}
 
 	err = d.store.RemoveAllUnclosedTransactions()
@@ -120,19 +134,23 @@ func (d *Depot) AddTransaction(newTransaction storage.Transaction) error {
 	return nil
 }
 
-func (d *Depot) processNewTransaction(newTransaction storage.Transaction) error {
+func (d *Depot) processNewTransaction(newTransaction storage.Transaction) (bool, storage.RealizedGain, error) {
+	isNewRealizedGain := false
+	var newRealizedGain storage.RealizedGain
+	var err error
+
 	switch newTransaction.TransactionType {
 	case "buy":
 		d.addBuyTransaction(newTransaction)
 	case "sell":
-		err := d.addSellTransaction(newTransaction)
+		isNewRealizedGain, newRealizedGain, err = d.addSellTransaction(newTransaction)
 		if err != nil {
-			return fmt.Errorf("failed to process sell transaction: %w", err)
+			return false, newRealizedGain, fmt.Errorf("failed to process sell transaction: %w", err)
 		}
 	default:
-		return errors.New("transaction type not supported")
+		return false, newRealizedGain, errors.New("transaction type not supported")
 	}
-	return nil
+	return isNewRealizedGain, newRealizedGain, nil
 }
 
 func (d *Depot) addBuyTransaction(newTransaction storage.Transaction) {
@@ -150,11 +168,14 @@ func (d *Depot) addBuyTransaction(newTransaction storage.Transaction) {
 	}
 }
 
-func (d *Depot) addSellTransaction(newTransaction storage.Transaction) error {
+func (d *Depot) addSellTransaction(newTransaction storage.Transaction) (bool, storage.RealizedGain, error) {
+
+	isNewRealizedGain := false
+	var newRealizedGain storage.RealizedGain
 
 	transactions, exists := d.unclosedTransactions[newTransaction.TickerSymbol]
 	if !exists {
-		return fmt.Errorf("no buy transaction available for this sell transaction %s", newTransaction.TickerSymbol)
+		return isNewRealizedGain, newRealizedGain, fmt.Errorf("no buy transaction available for this sell transaction %s", newTransaction.TickerSymbol)
 	}
 
 	//FiFo-Prinzip (First in, first out)
@@ -170,7 +191,7 @@ func (d *Depot) addSellTransaction(newTransaction storage.Transaction) error {
 	for _, availableBuyTrans := range transactions {
 
 		if availableBuyTrans.TransactionType != "buy" {
-			return fmt.Errorf("transaction is not a buy transaction %s", newTransaction.TickerSymbol)
+			return isNewRealizedGain, newRealizedGain, fmt.Errorf("transaction is not a buy transaction %s", newTransaction.TickerSymbol)
 		}
 
 		//Buy und sell Transaktionen sind gleich
@@ -185,13 +206,15 @@ func (d *Depot) addSellTransaction(newTransaction storage.Transaction) error {
 			modifyTransactions = filteredTransactions
 
 			//Berechne den Gewinn / Verlust
-			d.RealizedGains = append(d.RealizedGains, calculateProfitLoss(d.uuidGenerator, newTransaction, availableBuyTrans))
+			isNewRealizedGain = true
+			newRealizedGain = calculateProfitLoss(newTransaction, availableBuyTrans)
 			break
 		}
 		//Buy Transaktion ist größer als die Sell Transaktion
 		if availableBuyTrans.Quantity > newTransaction.Quantity {
 			//Berechne den Gewinn / Verlust
-			d.RealizedGains = append(d.RealizedGains, calculateProfitLoss(d.uuidGenerator, newTransaction, availableBuyTrans))
+			isNewRealizedGain = true
+			newRealizedGain = calculateProfitLoss(newTransaction, availableBuyTrans)
 			//Buy Transaktion verkleinern um die Anzahl der verkauften Assets
 			availableBuyTrans.Quantity -= newTransaction.Quantity
 			//Suche in den modifyTransactions die Transaktion
@@ -207,7 +230,8 @@ func (d *Depot) addSellTransaction(newTransaction storage.Transaction) error {
 		if availableBuyTrans.Quantity < newTransaction.Quantity {
 
 			//Berechne den Gewinn / Verlust
-			d.RealizedGains = append(d.RealizedGains, calculateProfitLoss(d.uuidGenerator, newTransaction, availableBuyTrans))
+			isNewRealizedGain = true
+			newRealizedGain = calculateProfitLoss(newTransaction, availableBuyTrans)
 			newTransaction.Quantity -= availableBuyTrans.Quantity
 
 			//Entferne die Transaktion aus der modifyTransactions
@@ -234,7 +258,7 @@ func (d *Depot) addSellTransaction(newTransaction storage.Transaction) error {
 	//Durchschnittskostenmethode (average cost)
 	//ToDo => Implementieren wenn nötig.
 
-	return nil
+	return isNewRealizedGain, newRealizedGain, nil
 }
 
 func (d *Depot) loadUnclosedTransactions() error {

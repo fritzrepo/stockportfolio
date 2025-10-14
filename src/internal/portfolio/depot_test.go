@@ -11,12 +11,10 @@ import (
 	"time"
 
 	"github.com/fritzrepo/stockportfolio/internal/storage"
-	"github.com/fritzrepo/stockportfolio/internal/testutil"
 )
 
 func setupTestStore(t *testing.T) storage.Store {
-	var uuidGenerator = testutil.NewMockUUIDGenerator()
-	store := storage.GetMemoryDatabase(uuidGenerator.GetUUID)
+	store := storage.GetMemoryDatabase()
 	store.Open()
 	err := store.CreateDatabase()
 	if err != nil {
@@ -74,12 +72,11 @@ func TestComputeTransactions(t *testing.T) {
 	for _, tt := range testCases {
 		t.Run(tt.Name, func(t *testing.T) {
 
-			var uuidGenerator = testutil.NewMockUUIDGenerator()
 			filenameTrans := fmt.Sprintf("../../testdata/depot/RawTransactionsTest%d.csv", i)
 			i = i + 1
 
-			store := storage.GetCsvStorage(filenameTrans, uuidGenerator.GetUUID)
-			dep := GetDepot(uuidGenerator.GetUUID, &store)
+			store := storage.GetCsvStorage(filenameTrans)
+			dep := GetDepot(&store)
 
 			err := dep.ComputeAllTransactions()
 			if err != nil {
@@ -102,7 +99,10 @@ func TestComputeTransactions(t *testing.T) {
 			}
 
 			//Check the realized gains
-			realizedGains := dep.RealizedGains
+			realizedGains, err := dep.GetAllRealizedGains()
+			if err != nil {
+				t.Fatalf("Error getting realized gains: %v", err)
+			}
 
 			for _, expectedEntry := range tt.ExpectedGains {
 				for _, realizedGain := range realizedGains {
@@ -130,9 +130,8 @@ func TestComputeTransactions(t *testing.T) {
 
 // Test addTransaction
 func TestAddTransactions(t *testing.T) {
-	var uuidGenerator = testutil.NewMockUUIDGenerator()
 	store := setupTestStore(t)
-	dep := GetDepot(uuidGenerator.GetUUID, store)
+	dep := GetDepot(store)
 
 	err := dep.AddTransaction(storage.Transaction{
 		Date:            time.Date(2023, 10, 1, 12, 0, 0, 0, time.UTC),
@@ -164,10 +163,12 @@ func TestAddTransactions(t *testing.T) {
 		t.Fatalf("Failed to add transaction: %v", err)
 	}
 
-	if len(dep.RealizedGains) != 1 {
-		t.Errorf("Expected 1 realized gain, but got %d", len(dep.RealizedGains))
+	realizedGains, _ := dep.GetAllRealizedGains()
+
+	if len(realizedGains) != 1 {
+		t.Errorf("Expected 1 realized gain, but got %d", len(realizedGains))
 	} else {
-		gain := dep.RealizedGains[0]
+		gain := realizedGains[0]
 		if gain.Asset != "Apple" {
 			t.Errorf("Realized gain values do not match expected values: %+v", gain)
 		}
@@ -180,9 +181,8 @@ func TestAddTransactions(t *testing.T) {
 }
 
 func TestDoNotAddAnExistingTransaction(t *testing.T) {
-	var uuidGenerator = testutil.NewMockUUIDGenerator()
 	store := setupTestStore(t)
-	dep := GetDepot(uuidGenerator.GetUUID, store)
+	dep := GetDepot(store)
 
 	transaction := storage.Transaction{
 		Date:            time.Date(2023, 10, 1, 12, 0, 0, 0, time.UTC),

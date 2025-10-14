@@ -5,9 +5,9 @@ import (
 	"github.com/google/uuid"
 )
 
-func calculateProfitLoss(uuidGenerator func() uuid.UUID, sellTrans storage.Transaction, buyTransaction storage.Transaction) storage.RealizedGain {
+func calculateProfitLoss(sellTrans storage.Transaction, buyTransaction storage.Transaction) storage.RealizedGain {
 	result := storage.RealizedGain{}
-	result.Id = uuidGenerator()
+	result.Id = uuid.New()
 	result.SellTransactionId = sellTrans.Id
 	result.BuyTransactionId = buyTransaction.Id
 	result.Asset = sellTrans.Asset

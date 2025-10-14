@@ -4,8 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type MemoryDatabase struct {
@@ -13,11 +11,10 @@ type MemoryDatabase struct {
 	db     *sql.DB
 }
 
-func GetMemoryDatabase(uuidGen func() uuid.UUID) *MemoryDatabase {
+func GetMemoryDatabase() *MemoryDatabase {
 	var memoryDB = &MemoryDatabase{
 		db: nil,
 	}
-	memoryDB.baseDb.uuidGenerator = uuidGen
 	return memoryDB
 }
 

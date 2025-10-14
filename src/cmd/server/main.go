@@ -11,7 +11,6 @@ import (
 	"github.com/fritzrepo/stockportfolio/internal/portfolio"
 	"github.com/fritzrepo/stockportfolio/internal/storage"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 var appConfig *config.Config
@@ -58,7 +57,7 @@ func initializingStore() {
 	_, err := os.Stat(appConfig.DatabaseFilePath)
 	dbNotExists := os.IsNotExist(err)
 
-	store = storage.GetFileDatabase(appConfig.DatabaseFilePath, uuid.New)
+	store = storage.GetFileDatabase(appConfig.DatabaseFilePath)
 
 	if dbNotExists {
 		log.Println("Database file does not exist, creating a new one...")
@@ -75,7 +74,7 @@ func initializingStore() {
 
 func initializingDepot() error {
 	log.Println("Initializing depot...")
-	depot = portfolio.GetDepot(uuid.New, store)
+	depot = portfolio.GetDepot(store)
 	err := depot.CalculateSecuritiesAccountBalance()
 	if err != nil {
 		log.Fatalf("Failed to calculate securities account balance: %v", err)

@@ -28,6 +28,10 @@ func (m *mockDepot) GetEntries() map[string]portfolio.DepotEntry {
 	return m.getEntries()
 }
 
+func (m *mockDepot) GetAllRealizedGains() ([]storage.RealizedGain, error) {
+	return nil, nil
+}
+
 func TestAddTransactionHandler_Success(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 

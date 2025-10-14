@@ -11,9 +11,11 @@ import (
 	"github.com/google/uuid"
 )
 
+// CsvStorage implements the storage.Store interface for CSV file storage.
+// Only for tests. Not for production use.
 type CsvStorage struct {
 	filePath      string
-	uuidGenerator func() uuid.UUID
+	realizedGains []RealizedGain
 }
 
 func (s *CsvStorage) CreateDatabase() error {
@@ -70,7 +72,7 @@ func (s *CsvStorage) ReadAllTransactions() ([]Transaction, error) {
 		// 	return nil, err
 		// }
 		transaction.Currency = values[8]
-		transaction.Id = s.uuidGenerator()
+		transaction.Id = uuid.New()
 		transactions = append(transactions, transaction)
 	}
 	return transactions, nil
@@ -102,13 +104,12 @@ func (s *CsvStorage) ReadAllUnclosedTransactions() (map[string][]Transaction, er
 }
 
 func (s *CsvStorage) AddRealizedGain(realizedGain RealizedGain) error {
-	// Not implemented for CSV storage
-	return errors.New("AddRealizedGain not implemented for CSV storage")
+	s.realizedGains = append(s.realizedGains, realizedGain)
+	return nil
 }
 
 func (s *CsvStorage) ReadAllRealizedGains() ([]RealizedGain, error) {
-	// Not implemented for CSV storage
-	return nil, errors.New("ReadAllRealizedGains not implemented for CSV storage")
+	return s.realizedGains, nil
 }
 
 func loadFile(filename string) ([]string, error) {
@@ -131,9 +132,8 @@ func loadFile(filename string) ([]string, error) {
 	return lines, nil
 }
 
-func GetCsvStorage(pathToFile string, uuidGen func() uuid.UUID) CsvStorage {
+func GetCsvStorage(pathToFile string) CsvStorage {
 	return CsvStorage{
-		uuidGenerator: uuidGen,
-		filePath:      pathToFile,
+		filePath: pathToFile,
 	}
 }

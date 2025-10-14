@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -13,13 +12,11 @@ type FileDatabase struct {
 	filePath string
 }
 
-func GetFileDatabase(pathToFile string, uuidGen func() uuid.UUID) *FileDatabase {
+func GetFileDatabase(pathToFile string) *FileDatabase {
 
 	var fileDB = &FileDatabase{
 		filePath: pathToFile,
 	}
-	fileDB.baseDb.uuidGenerator = uuidGen
-
 	return fileDB
 }
 

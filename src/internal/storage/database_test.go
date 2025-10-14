@@ -1,18 +1,15 @@
 package storage
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
-	"github.com/fritzrepo/stockportfolio/internal/testutil"
 	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
 )
 
 func setupTestStore(t *testing.T) Store {
-	var uuidGenerator = testutil.NewMockUUIDGenerator()
-	store := GetMemoryDatabase(uuidGenerator.GetUUID)
+	store := GetMemoryDatabase()
 	store.Open()
 	err := store.CreateDatabase()
 	if err != nil {
@@ -29,7 +26,7 @@ func TestInsertTransaction(t *testing.T) {
 	store := setupTestStore(t)
 
 	transaction := &Transaction{
-		//Id:            uuid.New(), // Wird automatisch generiert.
+		Id:              uuid.New(),
 		Date:            time.Date(2023, 10, 1, 12, 0, 0, 0, time.UTC),
 		TransactionType: "buy",
 		AssetType:       "stock",
@@ -67,7 +64,7 @@ func TestInsertUclosedTransaction(t *testing.T) {
 	store := setupTestStore(t)
 
 	transaction := &Transaction{
-		//Id:            uuid.New(), // Wird automatisch generiert.
+		Id:              uuid.New(),
 		Date:            time.Date(2023, 10, 1, 12, 0, 0, 0, time.UTC),
 		TransactionType: "buy",
 		AssetType:       "stock",
@@ -109,7 +106,7 @@ func TestInsertUclosedTransaction(t *testing.T) {
 
 	//Füge ein dritte Transaktion für ein neues asset hinzu.
 	transaction = &Transaction{
-		//Id:            uuid.New(), // Wird automatisch generiert.
+		Id:              uuid.New(),
 		Date:            time.Date(2022, 11, 7, 12, 0, 0, 0, time.UTC),
 		TransactionType: "buy",
 		AssetType:       "stock",
@@ -138,9 +135,12 @@ func TestInsertUclosedTransaction(t *testing.T) {
 func TestInsertRealizedGains(t *testing.T) {
 	store := setupTestStore(t)
 
+	Id1 := uuid.New() //Wird für die Foreign Key-Referenz benötigt.
+	Id2 := uuid.New()
+
 	//Wird für die Foreign Key-Referenz benötigt.
 	transaction := &Transaction{
-		//Id:              uuid.New(), // Wird automatisch generiert.
+		Id:              Id1,
 		Date:            time.Date(2023, 10, 1, 12, 0, 0, 0, time.UTC),
 		TransactionType: "buy",
 		AssetType:       "stock",
@@ -157,7 +157,7 @@ func TestInsertRealizedGains(t *testing.T) {
 	}
 
 	transaction = &Transaction{
-		//Id:              uuid.New(), // Wird automatisch generiert.
+		Id:              Id2,
 		Date:            time.Date(2023, 11, 1, 12, 0, 0, 0, time.UTC),
 		TransactionType: "sell",
 		AssetType:       "stock",
@@ -175,8 +175,8 @@ func TestInsertRealizedGains(t *testing.T) {
 
 	gain := &RealizedGain{
 		Id:                uuid.New(),
-		SellTransactionId: uuid.MustParse(fmt.Sprintf("00000000-0000-0000-0000-0000000000%02d", 1)),
-		BuyTransactionId:  uuid.MustParse(fmt.Sprintf("00000000-0000-0000-0000-0000000000%02d", 1)),
+		SellTransactionId: Id2,
+		BuyTransactionId:  Id1,
 		Asset:             "Apple",
 		Amount:            500.0,
 		IsProfit:          true,
@@ -217,7 +217,7 @@ func TestLoadTransactionByParams(t *testing.T) {
 	store := setupTestStore(t)
 
 	transaction := &Transaction{
-		//Id:            uuid.New(), // Wird automatisch generiert.
+		Id:              uuid.New(),
 		Date:            time.Date(2023, 10, 1, 12, 0, 0, 0, time.UTC),
 		TransactionType: "buy",
 		AssetType:       "stock",

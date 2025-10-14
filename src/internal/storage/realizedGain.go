@@ -8,13 +8,12 @@ type RealizedGain struct {
 	BuyTransactionId  uuid.UUID `json:"buytransactionId"`  // ID der Kauftransaktion
 	Asset             string    // Asset-Name
 	Amount            float64   // Der Gewinn/Verlust-Betrag
-	IsProfit          bool      // true für Gewinn, false für Verlust, könnte man auch berechnen?!
-	//Ja, aber eine Query auf IsProfit ist einfacher als eine Query auf BuyPrice und SellPrice. Obwohl, eigentlich auch nicht.
-	TaxRate   float64 // Anwendbarer Steuersatz
-	Quantity  float64
-	BuyPrice  float64
-	SellPrice float64
-	Currency  string
+	IsProfit          bool      // true für Gewinn, false für Verlust
+	TaxRate           float64   // Anwendbarer Steuersatz
+	Quantity          float64
+	BuyPrice          float64
+	SellPrice         float64
+	Currency          string
 }
 
 // func (d *RealizedGain) IsProfit() bool {

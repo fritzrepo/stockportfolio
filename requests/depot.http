@@ -7,11 +7,6 @@ Accept: application/json
 
 ###
 
-GET {{serviceApi_HostAddress}}/api/depot/getentries
-Accept: application/json
-
-###
-
 POST {{serviceApi_HostAddress}}/api/depot/addTransaction
 Content-Type: application/json
 Accept: application/json
@@ -27,5 +22,15 @@ Accept: application/json
   "fees": 5.00,
   "currency": "EUR"
 }
+
+###
+
+GET {{serviceApi_HostAddress}}/api/depot/getentries
+Accept: application/json
+
+###
+
+GET {{serviceApi_HostAddress}}/api/depot/getrealizedgains
+Accept: application/json
 
 ###

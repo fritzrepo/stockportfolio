@@ -43,6 +43,31 @@ func GetEntries(depot portfolio.Portfolio) gin.HandlerFunc {
 	}
 }
 
+func GetRealizedGains(depot portfolio.Portfolio) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		data, err := depot.GetAllRealizedGains()
+		if err != nil {
+			response := &ApiResponse{
+				Status:       "error",
+				Message:      "",
+				ErrorMessage: "Could not retrieve realized gains",
+				ErrorDetails: err.Error(),
+				Data:         nil,
+			}
+			c.JSON(http.StatusOK, response)
+			return
+		}
+		response := &ApiResponse{
+			Status:       "success",
+			Message:      "Realized gains loaded",
+			ErrorMessage: "",
+			ErrorDetails: "",
+			Data:         data,
+		}
+		c.JSON(http.StatusOK, response)
+	}
+}
+
 func AddTransactionHandler(depot portfolio.Portfolio) gin.HandlerFunc {
 	return func(c *gin.Context) {
 

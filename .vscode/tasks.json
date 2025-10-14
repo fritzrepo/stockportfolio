@@ -1,0 +1,35 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Go Build",
+      "type": "shell",
+      "command": "go build -v ./...",
+      "options": {
+        "cwd": "${workspaceFolder}/src"
+      },
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Go Test",
+      "type": "shell",
+      "command": "go test -cover ./...",
+      "options": {
+        "cwd": "${workspaceFolder}/src"
+      },
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Go Test Coverage",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}/src"
+      },
+      "command": "go test -coverprofile=coverage.out ./... && go tool cover -html=coverage.out -o ./result.html",
+      "group": "test",
+      "problemMatcher": []
+    }
+  ]
+}

@@ -9,15 +9,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/fritzrepo/stockportfolio/internal/config"
 	"github.com/fritzrepo/stockportfolio/internal/portfolio"
 	"github.com/fritzrepo/stockportfolio/internal/storage"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // mockDepot implements the AddTransaction method for testing
 type mockDepot struct {
-	addTransaction func(storage.Transaction) error
-	getEntries     func() map[string]portfolio.DepotEntry
+	addTransaction      func(storage.Transaction) error
+	getEntries          func() map[string]portfolio.DepotEntry
+	getAllRealizedGains func() ([]storage.RealizedGain, error)
 }
 
 func (m *mockDepot) AddTransaction(t storage.Transaction) error {
@@ -29,7 +32,42 @@ func (m *mockDepot) GetEntries() map[string]portfolio.DepotEntry {
 }
 
 func (m *mockDepot) GetAllRealizedGains() ([]storage.RealizedGain, error) {
-	return nil, nil
+	return m.getAllRealizedGains()
+}
+
+func TestPingHandler(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	appConfig := &config.Config{
+		DatabaseFilePath:    "test_db_path",
+		TransactionFilePath: "",
+	}
+
+	router := gin.New()
+	router.GET("/ping", PingHandler(appConfig))
+
+	req, _ := http.NewRequest(http.MethodGet, "/ping", nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("Expected status code %d, got %d", http.StatusOK, w.Code)
+	}
+
+	var response map[string]string
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal response: %v", err)
+	}
+
+	if response["message"] != "pong" {
+		t.Errorf("Expected message 'pong', got '%s'", response["message"])
+	}
+
+	if response["path"] != "test_db_path" {
+		t.Errorf("Expected path 'test_db_path', got '%s'", response["path"])
+	}
 }
 
 func TestAddTransactionHandler_Success(t *testing.T) {
@@ -198,7 +236,7 @@ func TestAddTransactionHandler_AddTransactionError(t *testing.T) {
 
 }
 
-func TestGetEnriesHandler_Success(t *testing.T) {
+func TestGetEntriesHandler_Success(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	mock := &mockDepot{
@@ -247,4 +285,113 @@ func TestGetEnriesHandler_Success(t *testing.T) {
 		t.Error("Expected data in response, got nil")
 	}
 
+}
+
+func TestGetRealizedGainsHandler_Success(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	mock := &mockDepot{
+		getEntries: func() map[string]portfolio.DepotEntry {
+			return nil
+		},
+		addTransaction: func(tr storage.Transaction) error {
+			return nil
+		},
+		getAllRealizedGains: func() ([]storage.RealizedGain, error) {
+			gains := []storage.RealizedGain{
+				{
+					Id:                uuid.New(),
+					BuyTransactionId:  uuid.New(),
+					SellTransactionId: uuid.New(),
+					Asset:             "Apple Inc.",
+					Amount:            100.00,
+					IsProfit:          true,
+					TaxRate:           10,
+					Quantity:          10,
+					BuyPrice:          140.00,
+					SellPrice:         150.00,
+					Currency:          "USD",
+				},
+			}
+			return gains, nil
+		},
+	}
+
+	router := gin.New()
+	router.GET("/getrealizedgains", GetRealizedGains(mock))
+
+	req, _ := http.NewRequest(http.MethodGet, "/getrealizedgains", nil)
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	var resp ApiResponse
+	err := json.Unmarshal(w.Body.Bytes(), &resp)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal response: %v", err)
+	}
+
+	if resp.Status != "success" {
+		t.Errorf("Expected success status, got %s", resp.Status)
+	}
+
+	if resp.Message != "Realized gains loaded" {
+		t.Errorf("Expected success message, got %s", resp.Message)
+	}
+
+	if resp.ErrorMessage != "" {
+		t.Errorf("Expected no error message, got %s", resp.ErrorMessage)
+	}
+
+	if resp.Data == nil {
+		t.Error("Expected data in response, got nil")
+	}
+}
+
+func TestGetRealizedGainsHandler_Error(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	mock := &mockDepot{
+		getEntries: func() map[string]portfolio.DepotEntry {
+			return nil
+		},
+		addTransaction: func(tr storage.Transaction) error {
+			return nil
+		},
+		getAllRealizedGains: func() ([]storage.RealizedGain, error) {
+			return nil, errors.New("db error")
+		},
+	}
+
+	router := gin.New()
+	router.GET("/getrealizedgains", GetRealizedGains(mock))
+
+	req, _ := http.NewRequest(http.MethodGet, "/getrealizedgains", nil)
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	var resp ApiResponse
+	err := json.Unmarshal(w.Body.Bytes(), &resp)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal response: %v", err)
+	}
+
+	if resp.Status != "error" {
+		t.Errorf("Expected error status, got %s", resp.Status)
+	}
+
+	if resp.Message != "" {
+		t.Errorf("Expected empty message, got %s", resp.Message)
+	}
+
+	if resp.ErrorMessage != "Could not retrieve realized gains" {
+		t.Errorf("Expected error message 'Could not retrieve realized gains', got %s", resp.ErrorMessage)
+	}
+
+	if resp.ErrorDetails != "db error" {
+		t.Errorf("Expected error details 'db error', got %s", resp.ErrorDetails)
+	}
 }

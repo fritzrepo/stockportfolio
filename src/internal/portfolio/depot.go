@@ -62,11 +62,13 @@ func (d *Depot) GetAllRealizedGains() ([]storage.RealizedGain, error) {
 // zugänglichen Transaktionen. Ist für den Import historischer Transaktionen oder für einen Fehlerfall gedacht,
 // bei dem man alles neu berechnen muss.
 // Sie ist auch für die Units Tests nützlich, da man damit den Algorithmus für "Realized Gains"
-// und "unclosed transactions" gut der testen kann.
+// und "unclosed transactions" gut testen kann.
 func (d *Depot) ComputeAllTransactions() error {
 
-	//ToDo => Prüfen ob hier noch die persistierten "RealizedGains" und
-	// die "unclosed transactions" gelöscht werden müsssen.
+	err := d.store.RemoveAllRealizedGains()
+	if err != nil {
+		return fmt.Errorf("failed to remove all realized gains from store: %w", err)
+	}
 
 	transactions, err := d.store.ReadAllTransactions()
 	if err != nil {
@@ -74,10 +76,35 @@ func (d *Depot) ComputeAllTransactions() error {
 	}
 
 	for _, newTransaction := range transactions {
-		d.processNewTransaction(newTransaction)
+		isNewRealizedGain, newRealizedGain, err := d.processNewTransaction(newTransaction)
+		if err != nil {
+			return err
+		}
+
+		if isNewRealizedGain {
+			newRealizedGain.Id = uuid.New()
+			err = d.store.AddRealizedGain(newRealizedGain)
+			if err != nil {
+				return fmt.Errorf("failed to add realized gain to store: %w", err)
+			}
+		}
 	}
 
-	//saveRealizedGains()
+	err = d.store.RemoveAllUnclosedTransactions()
+	if err != nil {
+		return fmt.Errorf("failed to remove all unclosed transaction from store: %w", err)
+	}
+
+	//Schleife zum Speichern aller unclosed transactions
+	for _, asset := range d.unclosedTransactions {
+		for _, transaction := range asset {
+			err = d.store.AddUnclosedTransaction(transaction)
+			if err != nil {
+				return fmt.Errorf("failed to save unclosed transactions to store: %w", err)
+			}
+		}
+	}
+
 	d.createDepotEntries()
 
 	return nil
@@ -129,7 +156,6 @@ func (d *Depot) AddTransaction(newTransaction storage.Transaction) error {
 		}
 	}
 
-	//saveRealizedGains()
 	d.createDepotEntries()
 	return nil
 }

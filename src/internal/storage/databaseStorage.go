@@ -320,6 +320,15 @@ func (s *DatabaseStorage) loadAllRealizedGains(db *sql.DB) ([]RealizedGain, erro
 	return realizedGains, nil
 }
 
+func (s *DatabaseStorage) removeRealizedGains(db *sql.DB) error {
+	sqlStmt := "DELETE FROM realized_gains;"
+	_, err := db.Exec(sqlStmt)
+	if err != nil {
+		return fmt.Errorf("error at delete all realized gains. %w", err)
+	}
+	return nil
+}
+
 func (s *DatabaseStorage) ping(db *sql.DB) error {
 	err := db.Ping()
 	if err != nil {

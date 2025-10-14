@@ -129,6 +129,12 @@ func (s *FileDatabase) ReadAllRealizedGains() ([]RealizedGain, error) {
 	return realizedGains, nil
 }
 
+func (s *FileDatabase) RemoveAllRealizedGains() error {
+	return s.withDatabase(func(db *sql.DB) error {
+		return s.baseDb.removeRealizedGains(db)
+	})
+}
+
 func (s *FileDatabase) withDatabase(action func(db *sql.DB) error) error {
 	dbPath := s.filePath
 

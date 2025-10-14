@@ -211,6 +211,20 @@ func TestInsertRealizedGains(t *testing.T) {
 		realizedGains[0].Currency != gain.Currency {
 		t.Errorf("Expected %+v, but got %+v", gain, realizedGains[0])
 	}
+
+	err = store.RemoveAllRealizedGains()
+	if err != nil {
+		t.Errorf("Failed to remove all realized gains: %v", err)
+	}
+
+	realizedGains, err = store.ReadAllRealizedGains()
+	if err != nil {
+		t.Errorf("Failed to load realized gains: %v", err)
+	}
+
+	if len(realizedGains) != 0 {
+		t.Errorf("Expected 0 realized gains after deletion, but got %d", len(realizedGains))
+	}
 }
 
 func TestLoadTransactionByParams(t *testing.T) {

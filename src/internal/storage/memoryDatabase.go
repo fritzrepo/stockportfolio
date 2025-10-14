@@ -78,3 +78,7 @@ func (s *MemoryDatabase) AddRealizedGain(realizedGain RealizedGain) error {
 func (s *MemoryDatabase) ReadAllRealizedGains() ([]RealizedGain, error) {
 	return s.baseDb.loadAllRealizedGains(s.db)
 }
+
+func (s *MemoryDatabase) RemoveAllRealizedGains() error {
+	return s.baseDb.removeRealizedGains(s.db)
+}

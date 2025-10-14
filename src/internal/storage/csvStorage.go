@@ -79,8 +79,8 @@ func (s *CsvStorage) ReadAllTransactions() ([]Transaction, error) {
 }
 
 func (s *CsvStorage) AddUnclosedTransaction(asset Transaction) error {
-	// Not implemented for CSV storage
-	return errors.New("AddUnclosedTransaction not implemented for CSV storage")
+	// Not implemented for CSV storage. Do nothing.
+	return nil
 }
 
 func (s *CsvStorage) LoadTransactionByParams(date time.Time, transType string, tickSymbol string) (*Transaction, error) {
@@ -89,8 +89,8 @@ func (s *CsvStorage) LoadTransactionByParams(date time.Time, transType string, t
 }
 
 func (s *CsvStorage) RemoveAllUnclosedTransactions() error {
-	// Not implemented for CSV storage
-	return errors.New("RemoveAllUnclosedTransactions not implemented for CSV storage")
+	// Not implemented for CSV storage. Do nothing.
+	return nil
 }
 
 func (s *CsvStorage) ReadAllUnclosedTickerSymbols() ([]string, error) {
@@ -110,6 +110,11 @@ func (s *CsvStorage) AddRealizedGain(realizedGain RealizedGain) error {
 
 func (s *CsvStorage) ReadAllRealizedGains() ([]RealizedGain, error) {
 	return s.realizedGains, nil
+}
+
+func (s *CsvStorage) RemoveAllRealizedGains() error {
+	s.realizedGains = nil
+	return nil
 }
 
 func loadFile(filename string) ([]string, error) {

@@ -14,4 +14,5 @@ type Store interface {
 	ReadAllUnclosedTransactions() (map[string][]Transaction, error)
 	AddRealizedGain(realizedGain RealizedGain) error
 	ReadAllRealizedGains() ([]RealizedGain, error)
+	RemoveAllRealizedGains() error
 }

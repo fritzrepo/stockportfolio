@@ -8,6 +8,13 @@ import (
 	"github.com/google/uuid"
 )
 
+type Performance struct {
+	TotalInvestedAmount  float64                `json:"totalInvestedAmount"`
+	CountOfRealizedGains int16                  `json:"countOfRealizedGains"`
+	TotalGains           float64                `json:"totalGains"`
+	RealizedGains        []storage.RealizedGain `json:"realizedGains"`
+}
+
 type DepotEntry struct {
 	AssetType    string  `json:"assetType"` //stock, crypto, forex
 	Asset        string  `json:"asset"`     //Name des Assets
@@ -48,6 +55,29 @@ func (d *Depot) CalculateSecuritiesAccountBalance() error {
 
 func (d *Depot) GetEntries() map[string]DepotEntry {
 	return d.depotEntries
+}
+
+func (d *Depot) GetPerformance() (Performance, error) {
+	result := Performance{}
+
+	realizedGains, err := d.GetAllRealizedGains()
+	if err != nil {
+		return result, fmt.Errorf("failed to get all realized gains: %w", err)
+	}
+
+	result.CountOfRealizedGains = int16(len(realizedGains))
+
+	for _, gain := range realizedGains {
+		result.TotalGains += gain.Amount
+	}
+
+	for _, gain := range realizedGains {
+		result.TotalInvestedAmount += gain.BuyPrice * gain.Quantity
+	}
+
+	result.RealizedGains = realizedGains
+
+	return result, nil
 }
 
 func (d *Depot) GetAllRealizedGains() ([]storage.RealizedGain, error) {

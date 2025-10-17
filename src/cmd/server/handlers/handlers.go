@@ -68,6 +68,31 @@ func GetRealizedGains(depot portfolio.Portfolio) gin.HandlerFunc {
 	}
 }
 
+func GetPerformanceHandler(depot portfolio.Portfolio) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		data, err := depot.GetPerformance()
+		if err != nil {
+			response := &ApiResponse{
+				Status:       "error",
+				Message:      "",
+				ErrorMessage: "Could not retrieve performance data",
+				ErrorDetails: err.Error(),
+				Data:         nil,
+			}
+			c.JSON(http.StatusOK, response)
+			return
+		}
+		response := &ApiResponse{
+			Status:       "success",
+			Message:      "Performance data loaded",
+			ErrorMessage: "",
+			ErrorDetails: "",
+			Data:         data,
+		}
+		c.JSON(http.StatusOK, response)
+	}
+}
+
 func AddTransactionHandler(depot portfolio.Portfolio) gin.HandlerFunc {
 	return func(c *gin.Context) {
 

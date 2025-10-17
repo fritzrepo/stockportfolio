@@ -34,3 +34,8 @@ GET {{serviceApi_HostAddress}}/api/depot/getrealizedgains
 Accept: application/json
 
 ###
+
+GET {{serviceApi_HostAddress}}/api/depot/getperformance
+Accept: application/json
+
+###

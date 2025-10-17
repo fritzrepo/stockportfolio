@@ -24,6 +24,7 @@ func main() {
 
 	router.GET("/ping", handlers.PingHandler(appConfig))
 	router.GET("/api/depot/getentries", handlers.GetEntries(depot))
+	router.GET("/api/depot/getperformance", handlers.GetPerformanceHandler(depot))
 	router.GET("/api/depot/getrealizedgains", handlers.GetRealizedGains(depot))
 	router.POST("/api/depot/addTransaction", handlers.AddTransactionHandler(depot))
 

@@ -21,6 +21,7 @@ type mockDepot struct {
 	addTransaction      func(storage.Transaction) error
 	getEntries          func() map[string]portfolio.DepotEntry
 	getAllRealizedGains func() ([]storage.RealizedGain, error)
+	getPerformance      func() (portfolio.Performance, error)
 }
 
 func (m *mockDepot) AddTransaction(t storage.Transaction) error {
@@ -33,6 +34,10 @@ func (m *mockDepot) GetEntries() map[string]portfolio.DepotEntry {
 
 func (m *mockDepot) GetAllRealizedGains() ([]storage.RealizedGain, error) {
 	return m.getAllRealizedGains()
+}
+
+func (m *mockDepot) GetPerformance() (portfolio.Performance, error) {
+	return m.getPerformance()
 }
 
 func TestPingHandler(t *testing.T) {
@@ -291,12 +296,6 @@ func TestGetRealizedGainsHandler_Success(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	mock := &mockDepot{
-		getEntries: func() map[string]portfolio.DepotEntry {
-			return nil
-		},
-		addTransaction: func(tr storage.Transaction) error {
-			return nil
-		},
 		getAllRealizedGains: func() ([]storage.RealizedGain, error) {
 			gains := []storage.RealizedGain{
 				{
@@ -353,12 +352,6 @@ func TestGetRealizedGainsHandler_Error(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	mock := &mockDepot{
-		getEntries: func() map[string]portfolio.DepotEntry {
-			return nil
-		},
-		addTransaction: func(tr storage.Transaction) error {
-			return nil
-		},
 		getAllRealizedGains: func() ([]storage.RealizedGain, error) {
 			return nil, errors.New("db error")
 		},
@@ -389,6 +382,94 @@ func TestGetRealizedGainsHandler_Error(t *testing.T) {
 
 	if resp.ErrorMessage != "Could not retrieve realized gains" {
 		t.Errorf("Expected error message 'Could not retrieve realized gains', got %s", resp.ErrorMessage)
+	}
+
+	if resp.ErrorDetails != "db error" {
+		t.Errorf("Expected error details 'db error', got %s", resp.ErrorDetails)
+	}
+}
+
+func TestGetPerformanceHandler_Success(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	mock := &mockDepot{
+		getPerformance: func() (portfolio.Performance, error) {
+			performance := portfolio.Performance{
+				TotalInvestedAmount:  10000.00,
+				CountOfRealizedGains: 5,
+				TotalGains:           1500.00,
+				RealizedGains:        []storage.RealizedGain{},
+			}
+			return performance, nil
+		},
+	}
+
+	router := gin.New()
+	router.GET("/getperformance", GetPerformanceHandler(mock))
+
+	req, _ := http.NewRequest(http.MethodGet, "/getperformance", nil)
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	var resp ApiResponse
+	err := json.Unmarshal(w.Body.Bytes(), &resp)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal response: %v", err)
+	}
+
+	if resp.Status != "success" {
+		t.Errorf("Expected success status, got %s", resp.Status)
+	}
+
+	if resp.Message != "Performance data loaded" {
+		t.Errorf("Expected success message, got %s", resp.Message)
+	}
+
+	if resp.ErrorMessage != "" {
+		t.Errorf("Expected no error message, got %s", resp.ErrorMessage)
+	}
+
+	if resp.Data == nil {
+		t.Error("Expected data in response, got nil")
+	}
+}
+
+func TestGetPerformance_Error(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	mock := &mockDepot{
+		getPerformance: func() (portfolio.Performance, error) {
+			return portfolio.Performance{}, errors.New("db error")
+		},
+	}
+
+	router := gin.New()
+	router.GET("/getperformance", GetPerformanceHandler(mock))
+
+	req, _ := http.NewRequest(http.MethodGet, "/getperformance", nil)
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	var resp ApiResponse
+	err := json.Unmarshal(w.Body.Bytes(), &resp)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal response: %v", err)
+	}
+
+	if resp.Status != "error" {
+		t.Errorf("Expected error status, got %s", resp.Status)
+	}
+
+	if resp.Message != "" {
+		t.Errorf("Expected empty message, got %s", resp.Message)
+	}
+
+	if resp.ErrorMessage != "Could not retrieve performance data" {
+		t.Errorf("Expected error message 'Could not retrieve performance data', got %s", resp.ErrorMessage)
 	}
 
 	if resp.ErrorDetails != "db error" {

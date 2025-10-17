@@ -15,7 +15,3 @@ type RealizedGain struct {
 	SellPrice         float64
 	Currency          string
 }
-
-// func (d *RealizedGain) IsProfit() bool {
-// 	return d.BuyPrice > d.SellPrice
-// }

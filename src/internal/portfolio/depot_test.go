@@ -38,7 +38,6 @@ func TestComputeTransactions(t *testing.T) {
 
 	testcount := 5
 	testCases := make(TestCases, testcount)
-
 	for i := range testcount {
 
 		filenameDepot := fmt.Sprintf("../../testdata/depot/expectedDepot%d.json", i+1)
@@ -104,28 +103,33 @@ func TestComputeTransactions(t *testing.T) {
 				t.Fatalf("Error getting realized gains: %v", err)
 			}
 
-			for _, expectedEntry := range tt.ExpectedGains {
-				for _, realizedGain := range realizedGains {
-					if realizedGain.Id == expectedEntry.Id {
-						const epsilon = 1e-3
-						if realizedGain.SellTransactionId != expectedEntry.SellTransactionId ||
-							realizedGain.BuyTransactionId != expectedEntry.BuyTransactionId ||
-							realizedGain.Asset != expectedEntry.Asset ||
-							math.Abs(expectedEntry.Amount-realizedGain.Amount) > epsilon ||
-							realizedGain.IsProfit != expectedEntry.IsProfit ||
-							math.Abs(expectedEntry.TaxRate-realizedGain.TaxRate) > epsilon ||
-							math.Abs(expectedEntry.Quantity-realizedGain.Quantity) > epsilon ||
-							math.Abs(expectedEntry.BuyPrice-realizedGain.BuyPrice) > epsilon ||
-							math.Abs(expectedEntry.SellPrice-realizedGain.SellPrice) > epsilon ||
-							realizedGain.Currency != expectedEntry.Currency {
-							t.Errorf("Realized gain for asset %s does not match expected values. Expected: %+v, Got: %+v", expectedEntry.Asset, expectedEntry, realizedGain)
-						}
-					}
+			for idx, expectedEntry := range tt.ExpectedGains {
+
+				// Suche den entsprechenden RealizedGain-Eintrag
+				var matchedGain *storage.RealizedGain
+				if idx < len(realizedGains) {
+					matchedGain = &realizedGains[idx]
+				}
+
+				if matchedGain == nil {
+					t.Errorf("No matching realized gain found for SellTransactionId: %s and BuyTransactionId: %s", expectedEntry.SellTransactionId, expectedEntry.BuyTransactionId)
+					continue
+				}
+
+				const epsilon = 1e-3
+				if matchedGain.Asset != expectedEntry.Asset ||
+					math.Abs(expectedEntry.Amount-matchedGain.Amount) > epsilon ||
+					matchedGain.IsProfit != expectedEntry.IsProfit ||
+					math.Abs(expectedEntry.TaxRate-matchedGain.TaxRate) > epsilon ||
+					math.Abs(expectedEntry.Quantity-matchedGain.Quantity) > epsilon ||
+					math.Abs(expectedEntry.BuyPrice-matchedGain.BuyPrice) > epsilon ||
+					math.Abs(expectedEntry.SellPrice-matchedGain.SellPrice) > epsilon ||
+					matchedGain.Currency != expectedEntry.Currency {
+					t.Errorf("Realized gain for asset %s does not match expected values. Expected: %+v, Got: %+v", expectedEntry.Asset, expectedEntry, matchedGain)
 				}
 			}
 		})
 	}
-
 }
 
 // Test addTransaction

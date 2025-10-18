@@ -25,6 +25,12 @@ Accept: application/json
 
 ###
 
+GET {{serviceApi_HostAddress}}/api/depot/getalltransactions
+Accept: text/plain
+#Accept: application/json
+
+###
+
 GET {{serviceApi_HostAddress}}/api/depot/getentries
 Accept: application/json
 

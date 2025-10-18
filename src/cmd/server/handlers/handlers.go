@@ -1,8 +1,11 @@
 package handlers
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/fritzrepo/stockportfolio/internal/config"
 	"github.com/fritzrepo/stockportfolio/internal/portfolio"
@@ -130,5 +133,60 @@ func AddTransactionHandler(depot portfolio.Portfolio) gin.HandlerFunc {
 		response.Data = transaction
 
 		c.JSON(http.StatusOK, response)
+	}
+}
+
+func GetAllTransactionsHandler(depot portfolio.Portfolio) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		data, err := depot.GetAllTransactions()
+		if err != nil {
+			response := &ApiResponse{
+				Status:       "error",
+				Message:      "",
+				ErrorMessage: "Could not retrieve transactions",
+				ErrorDetails: err.Error(),
+				Data:         nil,
+			}
+			c.JSON(http.StatusOK, response)
+			return
+		}
+
+		accept := c.GetHeader("Accept")
+		// JSON by default or when Accept contains application/json
+		if accept == "" || strings.Contains(accept, "application/json") {
+			response := &ApiResponse{
+				Status:       "success",
+				Message:      "Transactions loaded",
+				ErrorMessage: "",
+				ErrorDetails: "",
+				Data:         data,
+			}
+			c.JSON(http.StatusOK, response)
+			return
+		}
+
+		// Fallback: plain text output
+		var b strings.Builder
+		for i, t := range data {
+			if i > 0 {
+				b.WriteString("\n")
+			}
+			// Format nach Bedarf anpassen: hier einige Standardfelder
+			//b.WriteString(fmt.Sprintf("Date: %s | Type: %s | AssetType: %s | Asset: %s | Ticker: %s | Qty: %v | Price: %v | Fees: %v | Currency: %s",
+			b.WriteString(fmt.Sprintf("%s;%s;%s;%s;%s;%v;%v;%v;%s",
+				// t.Date.Format(time.RFC3339),
+				t.Date.Format(time.DateOnly),
+				t.TransactionType,
+				t.AssetType,
+				t.Asset,
+				t.TickerSymbol,
+				t.Quantity,
+				t.Price,
+				t.Fees,
+				t.Currency))
+		}
+		// Optional: Setze Content-Disposition Header für Dateidownload
+		//c.Header("Content-Disposition", "attachment; filename=\"datei.txt\"")
+		c.String(http.StatusOK, b.String())
 	}
 }

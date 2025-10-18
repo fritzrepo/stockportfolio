@@ -57,6 +57,14 @@ func (d *Depot) GetEntries() map[string]DepotEntry {
 	return d.depotEntries
 }
 
+func (d *Depot) GetAllTransactions() ([]storage.Transaction, error) {
+	transactions, err := d.store.ReadAllTransactions()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read transactions from store: %w", err)
+	}
+	return transactions, nil
+}
+
 func (d *Depot) GetPerformance() (Performance, error) {
 	result := Performance{}
 

@@ -22,6 +22,7 @@ type mockDepot struct {
 	getEntries          func() map[string]portfolio.DepotEntry
 	getAllRealizedGains func() ([]storage.RealizedGain, error)
 	getPerformance      func() (portfolio.Performance, error)
+	getAllTransactions  func() ([]storage.Transaction, error)
 }
 
 func (m *mockDepot) AddTransaction(t storage.Transaction) error {
@@ -38,6 +39,10 @@ func (m *mockDepot) GetAllRealizedGains() ([]storage.RealizedGain, error) {
 
 func (m *mockDepot) GetPerformance() (portfolio.Performance, error) {
 	return m.getPerformance()
+}
+
+func (m *mockDepot) GetAllTransactions() ([]storage.Transaction, error) {
+	return m.getAllTransactions()
 }
 
 func TestPingHandler(t *testing.T) {
@@ -470,6 +475,163 @@ func TestGetPerformance_Error(t *testing.T) {
 
 	if resp.ErrorMessage != "Could not retrieve performance data" {
 		t.Errorf("Expected error message 'Could not retrieve performance data', got %s", resp.ErrorMessage)
+	}
+
+	if resp.ErrorDetails != "db error" {
+		t.Errorf("Expected error details 'db error', got %s", resp.ErrorDetails)
+	}
+}
+
+func TestGetAllTransactionsHandler_Success(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	mock := &mockDepot{
+		getAllTransactions: func() ([]storage.Transaction, error) {
+			transactions := []storage.Transaction{
+				{
+					Id:              uuid.New(),
+					Date:            time.Now(),
+					TransactionType: "buy",
+					Asset:           "Apple Inc.",
+					Currency:        "USD",
+					Fees:            1.0,
+					TickerSymbol:    "AAPL",
+					Quantity:        10,
+					Price:           150.0,
+					AssetType:       "stock",
+				},
+			}
+			return transactions, nil
+		},
+	}
+	router := gin.New()
+	router.GET("/getalltransactions", GetAllTransactionsHandler(mock))
+
+	req, _ := http.NewRequest(http.MethodGet, "/getalltransactions", nil)
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	var resp ApiResponse
+	err := json.Unmarshal(w.Body.Bytes(), &resp)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal response: %v", err)
+	}
+
+	if resp.Status != "success" {
+		t.Errorf("Expected success status, got %s", resp.Status)
+	}
+
+	if resp.Message != "Transactions loaded" {
+		t.Errorf("Expected success message, got %s", resp.Message)
+	}
+
+	if resp.ErrorMessage != "" {
+		t.Errorf("Expected no error message, got %s", resp.ErrorMessage)
+	}
+
+	if resp.Data == nil {
+		t.Error("Expected data in response, got nil")
+	}
+}
+
+func TestGetAllTransactionsAsTextHandler_Success(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	mock := &mockDepot{
+		getAllTransactions: func() ([]storage.Transaction, error) {
+			transactions := []storage.Transaction{
+				{
+					Id:              uuid.New(),
+					Date:            time.Now(),
+					TransactionType: "buy",
+					Asset:           "Apple Inc.",
+					Currency:        "USD",
+					Fees:            1.0,
+					TickerSymbol:    "AAPL",
+					Quantity:        10,
+					Price:           150.0,
+					AssetType:       "stock",
+				},
+				{
+					Id:              uuid.New(),
+					Date:            time.Now(),
+					TransactionType: "buy",
+					Asset:           "BASF SE",
+					Currency:        "EUR",
+					Fees:            3.0,
+					TickerSymbol:    "BAS",
+					Quantity:        100,
+					Price:           50.0,
+					AssetType:       "stock",
+				},
+			}
+			return transactions, nil
+		},
+	}
+	router := gin.New()
+	router.GET("/getalltransactions", GetAllTransactionsHandler(mock))
+
+	req, _ := http.NewRequest(http.MethodGet, "/getalltransactions", nil)
+	req.Header.Set("Accept", "text/plain")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("Expected status code %d, got %d", http.StatusOK, w.Code)
+	}
+
+	expectedContentType := "text/plain; charset=utf-8"
+	if w.Header().Get("Content-Type") != expectedContentType {
+		t.Errorf("Expected Content-Type '%s', got '%s'", expectedContentType, w.Header().Get("Content-Type"))
+	}
+
+	if len(w.Body.Bytes()) == 0 {
+		t.Error("Expected non-empty response body")
+	}
+
+	//Body should contain transaction details
+	if !bytes.Contains(w.Body.Bytes(), []byte("Apple Inc.")) {
+		t.Error("Expected response body to contain transaction details")
+	}
+}
+
+func TestGetAllTransactionsHandler_Error(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	mock := &mockDepot{
+		getAllTransactions: func() ([]storage.Transaction, error) {
+			return nil, errors.New("db error")
+		},
+	}
+
+	router := gin.New()
+	router.GET("/getalltransactions", GetAllTransactionsHandler(mock))
+
+	req, _ := http.NewRequest(http.MethodGet, "/getalltransactions", nil)
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	var resp ApiResponse
+	err := json.Unmarshal(w.Body.Bytes(), &resp)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal response: %v", err)
+	}
+
+	if resp.Status != "error" {
+		t.Errorf("Expected error status, got %s", resp.Status)
+	}
+
+	if resp.Message != "" {
+		t.Errorf("Expected empty message, got %s", resp.Message)
+	}
+
+	if resp.ErrorMessage != "Could not retrieve transactions" {
+		t.Errorf("Expected error message 'Could not retrieve transactions', got %s", resp.ErrorMessage)
 	}
 
 	if resp.ErrorDetails != "db error" {

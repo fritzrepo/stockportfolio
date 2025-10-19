@@ -1,0 +1,41 @@
+[
+    {
+        "id": "00000000-0000-0000-0000-000000000001",
+        "sellTransactionId": "00000000-0000-0000-0000-000000000001",
+        "buyTransactionId": "00000000-0000-0000-0000-000000000001",
+        "asset": "Siemens",
+        "amount": 545,
+        "isProfit": true,
+        "taxRate": 0.0,
+        "quantity": 100,
+        "buyPrice": 90,
+        "sellPrice": 95.5,
+        "Currency": "EUR"
+    },
+    {
+        "id": "00000000-0000-0000-0000-000000000002",
+        "sellTransactionId": "00000000-0000-0000-0000-000000000002",
+        "buyTransactionId": "00000000-0000-0000-0000-000000000002",
+        "asset": "Apple",
+        "amount": 191,
+        "isProfit": true,
+        "taxRate": 0.0,
+        "quantity": 10,
+        "buyPrice": 100.5,
+        "sellPrice": 120.4,
+        "Currency": "EUR"
+    },
+    {
+        "id": "00000000-0000-0000-0000-000000000003",
+        "sellTransactionId": "00000000-0000-0000-0000-000000000003",
+        "buyTransactionId": "00000000-0000-0000-0000-000000000003",
+        "asset": "Apple",
+        "amount": 45.5,
+        "isProfit": true,
+        "taxRate": 0.0,
+        "quantity": 5,
+        "buyPrice": 110.5,
+        "sellPrice": 120.4,
+        "Currency": "EUR"
+    }
+]

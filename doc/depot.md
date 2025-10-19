@@ -6,6 +6,17 @@ Sind Transaktionen die noch nicht abgerechnet sind. Bedeutet, das das Asset im D
 
 ## Realized gains:
 Jede Abrechnung erzeugt einen "Realized Gains" (Gewinn / Verlust) Datensatz.
+Die Gebühren beim Kauf als auch beim Verkauf werden vom Gewinn abgezogen.
+Sollten für ein Asset mehrere Kauf oder Verkauf Transaktionen existieren, so werden alle möglichen Gebühren bei der ersten Abrechnung eingerechnet. In den nächsten Abrechnungen wird nur noch die jeweilige fehlende Gebühr eingerechnet.
+Beispiel:
+Zwei Käufe, ein Verkauf. Die Gebühr vom ersten Kauf und die Gebühr beim Verkauf sind in der ersten Abrechnung enthalten.
+Bei der zweiten Abrechnung ist nur die Gebühr des zweiten Kaufs enthalten, weil die Verkaufsgebühr schon in der ersten Abrechnung enthalten ist.
+Ein Kauf, zwei Verkäufe. Die Kauf-Gebühr und die Gebühr des ersten Verkaufs sind in der ersten Abrechnung enthalten. In der zweiten Abrechnung ist nur noch die Gebühr des zweiten Verkaufs enthalten.
+
+Der Gewinn bzw. Verlust pro Abrechnung ist dadurch etwas ungenau. Aber in der Gesamt-Statistik ist die Gebühr richtig berechnet.
+Ansonsten könnte man die Gebühr erst berechnen (und dann auch anteilsmässig) nachdem, alle Assets verkauft sind.
+
+Eine andere Lösung wäre, die Gebühren bei der Abrechnung zu ignorieren und die Gebühren über die Transaktionen zu berechnen und sichtbar zu machen. Es gibt aber auch Broker, das ist die Gebühr schon im Preis des Assets enthalten. Die Gebührenausweisung ist dann nicht oder nur schwer möglich.
 
 ## Persistenz
 Alle transactions, unclosed transactions und realized gains werden in der Db abgespeichert.

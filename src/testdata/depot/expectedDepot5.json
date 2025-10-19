@@ -1,10 +1,1 @@
-{
-    "AAPL": {
-        "AssetType": "stock",
-        "Asset": "Apple",
-        "TickerSymbol": "AAPL",
-        "Quantity": 30,
-        "Price": 120,
-        "Currency": "EUR"
-    }
-}
+{}

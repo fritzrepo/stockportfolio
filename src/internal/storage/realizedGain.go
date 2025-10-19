@@ -2,6 +2,8 @@ package storage
 
 import "github.com/google/uuid"
 
+// RealizedGain repräsentiert einen realisierten Gewinn oder Verlust aus dem Verkauf von Assets.
+// Die Gebühren sind in der Berechnung des Amounts bereits berücksichtigt.
 type RealizedGain struct {
 	Id                uuid.UUID `json:"id"`                // ID der Realisierung
 	SellTransactionId uuid.UUID `json:"sellTransactionId"` // ID der Verkaufstransaktion

@@ -314,6 +314,8 @@ func (d *Depot) addSellTransaction(newTransaction storage.Transaction) (bool, []
 			newRealizedGains = append(newRealizedGains, newRealizedGain)
 			//Buy Transaktion verkleinern um die Anzahl der verkauften Assets
 			availableBuyTrans.Quantity -= newTransaction.Quantity
+			//Da die Gebühren schon in der ersten Berechnung abgezogen wurden, müssen sie hier auf 0 gesetzt werden.
+			availableBuyTrans.Fees = 0.0
 			//Suche in den modifyTransactions die Transaktion
 			for i, transaction := range modifyTransactions {
 				if transaction.Id == availableBuyTrans.Id {
@@ -331,6 +333,8 @@ func (d *Depot) addSellTransaction(newTransaction storage.Transaction) (bool, []
 			newRealizedGain = calculateProfitLoss(newTransaction, availableBuyTrans)
 			newRealizedGains = append(newRealizedGains, newRealizedGain)
 			newTransaction.Quantity -= availableBuyTrans.Quantity
+			//Da die Gebühren schon in der ersten Berechnung abgezogen wurden, müssen sie hier auf 0 gesetzt werden.
+			newTransaction.Fees = 0.0
 
 			//Entferne die Transaktion aus der modifyTransactions
 			filteredTransactions := []storage.Transaction{}

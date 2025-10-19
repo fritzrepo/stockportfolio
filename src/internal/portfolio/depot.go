@@ -97,8 +97,8 @@ func (d *Depot) GetAllRealizedGains() ([]storage.RealizedGain, error) {
 }
 
 // Diese Funktion berechnet die "Realized Gains" und die "unclosed transactions" aller ihr
-// zugänglichen Transaktionen. Ist für den Import historischer Transaktionen oder für einen Fehlerfall gedacht,
-// bei dem man alles neu berechnen muss.
+// zugänglichen Transaktionen. Sie ist für den Fehlerfall gedacht,
+// bei dem man alles neu berechnen muss. Oder wenn sich die Berechnungslogik ändert.
 // Sie ist auch für die Units Tests nützlich, da man damit den Algorithmus für "Realized Gains"
 // und "unclosed transactions" gut testen kann.
 func (d *Depot) ComputeAllTransactions() error {
@@ -148,6 +148,30 @@ func (d *Depot) ComputeAllTransactions() error {
 	}
 
 	d.createDepotEntries()
+
+	return nil
+}
+
+// ResetDepot löscht alle Transaktionen, realisierten Gewinne und offene Transaktionen im Depot.
+func (d *Depot) ResetDepot() error {
+
+	d.unclosedTransactions = make(map[string][]storage.Transaction)
+	d.depotEntries = make(map[string]DepotEntry)
+
+	err := d.store.RemoveAllRealizedGains()
+	if err != nil {
+		return fmt.Errorf("failed to clear all realized gains from store: %w", err)
+	}
+
+	err = d.store.RemoveAllUnclosedTransactions()
+	if err != nil {
+		return fmt.Errorf("failed to clear all unclosed transactions from store: %w", err)
+	}
+
+	err = d.store.RemoveAllTransactions()
+	if err != nil {
+		return fmt.Errorf("failed to clear all transactions from store: %w", err)
+	}
 
 	return nil
 }

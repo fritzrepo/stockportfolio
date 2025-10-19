@@ -23,6 +23,7 @@ type mockDepot struct {
 	getAllRealizedGains func() ([]storage.RealizedGain, error)
 	getPerformance      func() (portfolio.Performance, error)
 	getAllTransactions  func() ([]storage.Transaction, error)
+	resetDepot          func() error
 }
 
 func (m *mockDepot) AddTransaction(t storage.Transaction) error {
@@ -43,6 +44,10 @@ func (m *mockDepot) GetPerformance() (portfolio.Performance, error) {
 
 func (m *mockDepot) GetAllTransactions() ([]storage.Transaction, error) {
 	return m.getAllTransactions()
+}
+
+func (m *mockDepot) ResetDepot() error {
+	return m.resetDepot()
 }
 
 func TestPingHandler(t *testing.T) {
@@ -632,6 +637,78 @@ func TestGetAllTransactionsHandler_Error(t *testing.T) {
 
 	if resp.ErrorMessage != "Could not retrieve transactions" {
 		t.Errorf("Expected error message 'Could not retrieve transactions', got %s", resp.ErrorMessage)
+	}
+
+	if resp.ErrorDetails != "db error" {
+		t.Errorf("Expected error details 'db error', got %s", resp.ErrorDetails)
+	}
+}
+
+func TestResetDepotHandler_Success(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	mock := &mockDepot{
+		resetDepot: func() error {
+			return nil
+		},
+	}
+
+	router := gin.New()
+	router.POST("/resetdepot", ResetDepotHandler(mock))
+
+	req, _ := http.NewRequest(http.MethodPost, "/resetdepot", nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	var resp ApiResponse
+	err := json.Unmarshal(w.Body.Bytes(), &resp)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal response: %v", err)
+	}
+
+	if resp.Status != "success" {
+		t.Errorf("Expected success status, got %s", resp.Status)
+	}
+
+	if resp.Message != "Depot reset successfully" {
+		t.Errorf("Expected success message, got %s", resp.Message)
+	}
+
+	if resp.ErrorMessage != "" {
+		t.Errorf("Expected no error message, got %s", resp.ErrorMessage)
+	}
+}
+
+func TestResetDepotHandler_Error(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	mock := &mockDepot{
+		resetDepot: func() error {
+			return errors.New("db error")
+		},
+	}
+
+	router := gin.New()
+	router.DELETE("/resetdepot", ResetDepotHandler(mock))
+
+	req, _ := http.NewRequest(http.MethodDelete, "/resetdepot", nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	var resp ApiResponse
+	err := json.Unmarshal(w.Body.Bytes(), &resp)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal response: %v", err)
+	}
+
+	if resp.Status != "error" {
+		t.Errorf("Expected error status, got %s", resp.Status)
+	}
+
+	if resp.Message != "Failed to reset depot" {
+		t.Errorf("Expected error message 'Failed to reset depot', got %s", resp.Message)
 	}
 
 	if resp.ErrorDetails != "db error" {

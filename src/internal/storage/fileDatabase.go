@@ -66,6 +66,12 @@ func (s *FileDatabase) ReadAllTransactions() ([]Transaction, error) {
 	return transactions, err
 }
 
+func (s *FileDatabase) RemoveAllTransactions() error {
+	return s.withDatabase(func(db *sql.DB) error {
+		return s.baseDb.deleteAllTransactions(db)
+	})
+}
+
 func (s *FileDatabase) AddUnclosedTransaction(asset Transaction) error {
 	return s.withDatabase(func(db *sql.DB) error {
 		return s.baseDb.insertUnclosedTransaction(db, asset)

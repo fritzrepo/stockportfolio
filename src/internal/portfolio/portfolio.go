@@ -8,4 +8,5 @@ type Portfolio interface {
 	GetAllTransactions() ([]storage.Transaction, error)
 	GetPerformance() (Performance, error)
 	GetAllRealizedGains() ([]storage.RealizedGain, error)
+	ResetDepot() error
 }

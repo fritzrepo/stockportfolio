@@ -28,6 +28,7 @@ func main() {
 	router.GET("/api/depot/getrealizedgains", handlers.GetRealizedGains(depot))
 	router.POST("/api/depot/addTransaction", handlers.AddTransactionHandler(depot))
 	router.GET("/api/depot/getalltransactions", handlers.GetAllTransactionsHandler(depot))
+	router.DELETE("/api/depot/resetdepot", handlers.ResetDepotHandler(depot))
 
 	router.Run()
 }

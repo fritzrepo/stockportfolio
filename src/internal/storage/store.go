@@ -8,6 +8,7 @@ type Store interface {
 	AddTransaction(transaction *Transaction) error
 	LoadTransactionByParams(date time.Time, transType string, tickSymbol string) (*Transaction, error)
 	ReadAllTransactions() ([]Transaction, error)
+	RemoveAllTransactions() error
 	AddUnclosedTransaction(asset Transaction) error
 	RemoveAllUnclosedTransactions() error
 	ReadAllUnclosedTickerSymbols() ([]string, error)

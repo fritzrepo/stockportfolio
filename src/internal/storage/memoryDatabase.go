@@ -54,6 +54,10 @@ func (s *MemoryDatabase) ReadAllTransactions() ([]Transaction, error) {
 	return s.baseDb.loadAllTransactions(s.db)
 }
 
+func (s *MemoryDatabase) RemoveAllTransactions() error {
+	return s.baseDb.deleteAllTransactions(s.db)
+}
+
 func (s *MemoryDatabase) AddUnclosedTransaction(asset Transaction) error {
 	return s.baseDb.insertUnclosedTransaction(s.db, asset)
 }

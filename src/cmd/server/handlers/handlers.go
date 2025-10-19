@@ -15,11 +15,11 @@ import (
 )
 
 type ApiResponse struct {
-	Status       string      `json:"status"`
-	Message      string      `json:"message"`
-	ErrorMessage string      `json:"error_message"`
-	ErrorDetails string      `json:"error_details"`
-	Data         interface{} `json:"data,omitempty"`
+	Status       string `json:"status"`
+	Message      string `json:"message"`
+	ErrorMessage string `json:"error_message"`
+	ErrorDetails string `json:"error_details"`
+	Data         any    `json:"data,omitempty"`
 }
 
 // PingHandler returns a simple JSON response with a message and the database file path
@@ -188,5 +188,30 @@ func GetAllTransactionsHandler(depot portfolio.Portfolio) gin.HandlerFunc {
 		// Optional: Setze Content-Disposition Header für Dateidownload
 		//c.Header("Content-Disposition", "attachment; filename=\"datei.txt\"")
 		c.String(http.StatusOK, b.String())
+	}
+}
+
+// Wenn Rechteverwaltung implementiert ist, nur Admins erlauben
+func ResetDepotHandler(depot portfolio.Portfolio) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		response := &ApiResponse{
+			Status:       "success",
+			Message:      "Depot reset successfully",
+			ErrorMessage: "",
+			ErrorDetails: "",
+			Data:         nil,
+		}
+
+		err := depot.ResetDepot()
+		if err != nil {
+			response.Status = "error"
+			response.Message = "Failed to reset depot"
+			response.ErrorMessage = "Delete the database file manually and restart the server"
+			response.ErrorDetails = err.Error()
+			c.JSON(http.StatusOK, response)
+			return
+		}
+
+		c.JSON(http.StatusOK, response)
 	}
 }

@@ -144,6 +144,15 @@ func (s *DatabaseStorage) loadTransactionByParams(db *sql.DB, date time.Time, tr
 	return &transaction, nil
 }
 
+func (s *DatabaseStorage) deleteAllTransactions(db *sql.DB) error {
+	sqlStmt := "DELETE FROM transactions;"
+	_, err := db.Exec(sqlStmt)
+	if err != nil {
+		return fmt.Errorf("error at delete all transactions. %w", err)
+	}
+	return nil
+}
+
 func (s *DatabaseStorage) insertUnclosedTransaction(db *sql.DB, trans Transaction) error {
 
 	// Save Asset-Name in unclosed_assets table

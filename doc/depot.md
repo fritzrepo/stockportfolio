@@ -2,7 +2,7 @@
 Jeder Kauf (buy) und Verkauf (sell) stellt eine Transaktion dar. Die Transaktionen werden in einer Liste in der Reihefolge ihres Auftretens gespeichert. Zur Zeit wird beim Einfügen einer Transaktion kein Duplikat-Test durchgeführt. Dieser könnte anhand einer Auftragsnummer gemacht werden.
 
 ## Unclosed transactions:
-Sind Transaktionen die noch nicht abgerechnet sind. Bedeutet, das das Asset im Depot vorhanden ist. Die unclosed Transaktionen können nur vom Typ "buy" sein, da bei Verkaufs-Transaktionen "sell" die Abrechnung (Gewinn / Verlust) ausgelöst wird. Mehrere unclosed transaction vom gleichen Asset bilden einen Depoteintrag.
+Sind Transaktionen die noch nicht abgerechnet sind. Bedeutet, das das Asset im Depot vorhanden ist. Die unclosed transactions können nur vom Typ "buy" sein, da bei Verkaufs-Transaktionen "sell" die Abrechnung (Gewinn / Verlust) ausgelöst wird. Eine oder mehrere unclosed transactions vom gleichen Asset bilden einen Depoteintrag.
 
 ## Realized gains:
 Jede Abrechnung erzeugt einen "Realized Gains" (Gewinn / Verlust) Datensatz.

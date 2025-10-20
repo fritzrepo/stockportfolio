@@ -22,8 +22,9 @@
             "args": [
                 //"buildDb"
                 //"fillDb"
-                "readTransactions"
+                //"readTransactions"
                 //"compute"
+                "readCsv"
             ],
         },
         {

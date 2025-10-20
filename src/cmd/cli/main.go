@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/fritzrepo/stockportfolio/cmd/cli/imports"
 	"github.com/fritzrepo/stockportfolio/internal/config"
 	"github.com/fritzrepo/stockportfolio/internal/portfolio"
 	"github.com/fritzrepo/stockportfolio/internal/storage"
@@ -14,6 +15,7 @@ func main() {
 	var fillDb = false
 	var compute = false
 	var readTransaktions = false
+	var readCsv = false
 
 	// the first argument is always program name
 	argLength := len(os.Args[1:])
@@ -32,6 +34,9 @@ func main() {
 		}
 		if a == "compute" {
 			compute = true
+		}
+		if a == "readCsv" {
+			readCsv = true
 		}
 	}
 
@@ -112,6 +117,28 @@ func main() {
 		realizedGains, _ := dep.GetAllRealizedGains()
 		fmt.Println(realizedGains)
 		fmt.Println("End")
+	}
+
+	if readCsv {
+		fmt.Println("Reading transactions from CSV")
+
+		transactions := imports.ReadRealizedGainsCsv("../../../Investbilanz_Alex_und_Ingo.csv")
+
+		store := storage.GetFileDatabase(config.DatabaseFilePath)
+		depot := portfolio.GetDepot(store)
+		depot.ResetDepot()
+
+		for _, transaction := range transactions {
+			fmt.Println(transaction)
+			err := depot.AddTransaction(transaction)
+			if err != nil {
+				fmt.Println("Error adding transaction to depot")
+				panic(err)
+			}
+			fmt.Println("Inserted transaction into depot")
+		}
+
+		fmt.Println("End reading CSV")
 	}
 
 }

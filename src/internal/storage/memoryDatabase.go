@@ -3,7 +3,6 @@ package storage
 import (
 	"database/sql"
 	"errors"
-	"time"
 )
 
 type MemoryDatabase struct {
@@ -46,8 +45,8 @@ func (s *MemoryDatabase) AddTransaction(transaction *Transaction) error {
 	return s.baseDb.insertTransaction(s.db, transaction)
 }
 
-func (s *MemoryDatabase) LoadTransactionByParams(date time.Time, transType string, tickSymbol string) (*Transaction, error) {
-	return s.baseDb.loadTransactionByParams(s.db, date, transType, tickSymbol)
+func (s *MemoryDatabase) ExistsTransaction(transaction *Transaction) (*Transaction, error) {
+	return s.baseDb.existsTransaction(s.db, transaction)
 }
 
 func (s *MemoryDatabase) ReadAllTransactions() ([]Transaction, error) {

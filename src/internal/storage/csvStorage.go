@@ -78,7 +78,7 @@ func (s *CsvStorage) ReadAllTransactions() ([]Transaction, error) {
 	return transactions, nil
 }
 
-func (s *CsvStorage) LoadTransactionByParams(date time.Time, transType string, tickSymbol string) (*Transaction, error) {
+func (s *CsvStorage) ExistsTransaction(transaction *Transaction) (*Transaction, error) {
 	// Not implemented for CSV storage
 	return nil, errors.New("LoadTransactionByParams not implemented for CSV storage")
 }

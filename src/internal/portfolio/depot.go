@@ -9,10 +9,9 @@ import (
 )
 
 type Performance struct {
-	TotalInvestedAmount  float64                `json:"totalInvestedAmount"`
-	CountOfRealizedGains int16                  `json:"countOfRealizedGains"`
-	TotalGains           float64                `json:"totalGains"`
-	RealizedGains        []storage.RealizedGain `json:"realizedGains"`
+	TotalInvestedAmount  float64 `json:"totalInvestedAmount"`
+	CountOfRealizedGains int16   `json:"countOfRealizedGains"`
+	TotalGains           float64 `json:"totalGains"`
 }
 
 type DepotEntry struct {
@@ -82,8 +81,6 @@ func (d *Depot) GetPerformance() (Performance, error) {
 	for _, gain := range realizedGains {
 		result.TotalInvestedAmount += gain.BuyPrice * gain.Quantity
 	}
-
-	result.RealizedGains = realizedGains
 
 	return result, nil
 }
@@ -176,15 +173,17 @@ func (d *Depot) ResetDepot() error {
 	return nil
 }
 
-func (d *Depot) AddTransaction(newTransaction storage.Transaction) error {
+func (d *Depot) AddTransaction(newTransaction storage.Transaction, checkExists bool) error {
 
 	//Überprüfen, ob die Transaction schon existiert
-	transaction, err := d.store.LoadTransactionByParams(newTransaction.Date, newTransaction.TransactionType, newTransaction.TickerSymbol)
-	if err != nil {
-		return err
-	}
-	if transaction != nil {
-		return errors.New("transaction already exists")
+	if checkExists {
+		transaction, err := d.store.ExistsTransaction(&newTransaction)
+		if err != nil {
+			return err
+		}
+		if transaction != nil {
+			return errors.New("transaction already exists")
+		}
 	}
 
 	newTransaction.Id = uuid.New()

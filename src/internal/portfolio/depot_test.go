@@ -146,7 +146,7 @@ func TestAddTransactions(t *testing.T) {
 		Quantity:        10,
 		Price:           150,
 		Fees:            1.5,
-		Currency:        "USD"})
+		Currency:        "USD"}, true)
 
 	if err != nil {
 		t.Fatalf("Failed to add transaction: %v", err)
@@ -161,7 +161,7 @@ func TestAddTransactions(t *testing.T) {
 		Quantity:        5,
 		Price:           200,
 		Fees:            1.5,
-		Currency:        "USD"})
+		Currency:        "USD"}, true)
 
 	if err != nil {
 		t.Fatalf("Failed to add transaction: %v", err)
@@ -199,13 +199,13 @@ func TestDoNotAddAnExistingTransaction(t *testing.T) {
 		Fees:            1.5,
 		Currency:        "USD"}
 
-	err := dep.AddTransaction(transaction)
+	err := dep.AddTransaction(transaction, true)
 	if err != nil {
 		t.Fatalf("Failed to add transaction: %v", err)
 	}
 
 	//Versuche die gleiche Transaktion erneut hinzuzufügen
-	err = dep.AddTransaction(transaction)
+	err = dep.AddTransaction(transaction, true)
 	if err == nil {
 		t.Fatalf("Expected error when adding an existing transaction, but got none")
 	}

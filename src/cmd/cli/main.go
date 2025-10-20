@@ -130,7 +130,7 @@ func main() {
 
 		for _, transaction := range transactions {
 			fmt.Println(transaction)
-			err := depot.AddTransaction(transaction)
+			err := depot.AddTransaction(transaction, false)
 			if err != nil {
 				fmt.Println("Error adding transaction to depot")
 				panic(err)

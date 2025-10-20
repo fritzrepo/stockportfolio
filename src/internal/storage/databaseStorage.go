@@ -3,7 +3,6 @@ package storage
 import (
 	"database/sql"
 	"fmt"
-	"time"
 )
 
 type DatabaseStorage struct {
@@ -120,9 +119,15 @@ func (s *DatabaseStorage) loadAllTransactions(db *sql.DB) ([]Transaction, error)
 	return transactions, nil
 }
 
-func (s *DatabaseStorage) loadTransactionByParams(db *sql.DB, date time.Time, transType string, tickSymbol string) (*Transaction, error) {
+func (s *DatabaseStorage) existsTransaction(db *sql.DB, searchTransaction *Transaction) (*Transaction, error) {
 	var transaction Transaction
-	row := db.QueryRow("SELECT id, date, transactionType, assetType, asset, tickerSymbol, quantity, price, fees, currency FROM transactions WHERE date = ? AND transactionType = ? AND tickerSymbol = ?", date, transType, tickSymbol)
+	row := db.QueryRow("SELECT id, date, transactionType, assetType, asset, tickerSymbol, quantity, price, fees, currency FROM transactions WHERE date = ? AND transactionType = ? AND tickerSymbol = ? AND price = ? AND quantity = ?;",
+		searchTransaction.Date,
+		searchTransaction.TransactionType,
+		searchTransaction.TickerSymbol,
+		searchTransaction.Price,
+		searchTransaction.Quantity)
+
 	err := row.Scan(
 		&transaction.Id,
 		&transaction.Date,

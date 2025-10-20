@@ -26,7 +26,7 @@ type mockDepot struct {
 	resetDepot          func() error
 }
 
-func (m *mockDepot) AddTransaction(t storage.Transaction) error {
+func (m *mockDepot) AddTransaction(t storage.Transaction, checkExists bool) error {
 	return m.addTransaction(t)
 }
 
@@ -408,7 +408,6 @@ func TestGetPerformanceHandler_Success(t *testing.T) {
 				TotalInvestedAmount:  10000.00,
 				CountOfRealizedGains: 5,
 				TotalGains:           1500.00,
-				RealizedGains:        []storage.RealizedGain{},
 			}
 			return performance, nil
 		},

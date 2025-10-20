@@ -119,7 +119,7 @@ func AddTransactionHandler(depot portfolio.Portfolio) gin.HandlerFunc {
 
 		transaction.Id = uuid.New()
 		log.Printf("Received transaction: %+v\n", transaction)
-		err := depot.AddTransaction(transaction)
+		err := depot.AddTransaction(transaction, true)
 		if err != nil {
 			log.Printf("Error adding transaction: %v\n", err)
 			response.Status = "error"

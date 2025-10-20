@@ -247,7 +247,7 @@ func TestLoadTransactionByParams(t *testing.T) {
 		t.Errorf("Failed to insert transaction: %v", err)
 	}
 
-	loadedTransaction, err := store.LoadTransactionByParams(transaction.Date, transaction.TransactionType, transaction.TickerSymbol)
+	loadedTransaction, err := store.ExistsTransaction(transaction)
 	if err != nil {
 		t.Errorf("Failed to load transaction by params: %v", err)
 	}
@@ -260,7 +260,20 @@ func TestLoadTransactionByParams(t *testing.T) {
 	}
 
 	//Teste das Laden einer nicht existierenden Transaktion
-	loadedTransaction, err = store.LoadTransactionByParams(time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC), "sell", "MSFT")
+	notExistingTransaction := &Transaction{
+		Id:              uuid.New(),
+		Date:            time.Date(2024, 10, 1, 12, 0, 0, 0, time.UTC),
+		TransactionType: "buy",
+		AssetType:       "stock",
+		Asset:           "BASF",
+		TickerSymbol:    "BASF",
+		Quantity:        10,
+		Price:           150,
+		Fees:            1.5,
+		Currency:        "EUR"}
+
+	loadedTransaction, err = store.ExistsTransaction(notExistingTransaction)
+
 	if err != nil {
 		t.Errorf("Failed to load transaction by params: %v", err)
 	}

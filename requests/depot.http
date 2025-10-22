@@ -17,14 +17,15 @@ Content-Type: application/json
 Accept: application/json
 
 {
-  "date": "2025-07-12T12:00:00Z",
-  "transactionType": "buy",
+  "date": "2025-07-13T12:00:00Z",
+  "transactionType": "sell",
   "assetType": "stock",
   "asset": "BASF SE",
   "tickerSymbol": "BAS",
   "quantity": 100,
-  "price": 105.00,
+  "price": 100.00,
   "fees": 5.00,
+  "depotName": "testDepot",
   "currency": "EUR"
 }
 

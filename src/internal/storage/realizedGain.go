@@ -8,12 +8,13 @@ type RealizedGain struct {
 	Id                uuid.UUID `json:"id"`                // ID der Realisierung
 	SellTransactionId uuid.UUID `json:"sellTransactionId"` // ID der Verkaufstransaktion
 	BuyTransactionId  uuid.UUID `json:"buytransactionId"`  // ID der Kauftransaktion
-	Asset             string    // Asset-Name
-	Amount            float64   // Der Gewinn/Verlust-Betrag
-	IsProfit          bool      // true für Gewinn, false für Verlust
-	TaxRate           float64   // Anwendbarer Steuersatz
-	Quantity          float64
-	BuyPrice          float64
-	SellPrice         float64
-	Currency          string
+	Asset             string    `json:"asset"`             // Asset-Name
+	DepotName         string    `json:"depotName"`         // Name des Depots
+	Amount            float64   `json:"amount"`            // Der Gewinn/Verlust-Betrag
+	IsProfit          bool      `json:"isProfit"`          // true für Gewinn, false für Verlust
+	TaxRate           float64   `json:"taxRate"`           // Anwendbarer Steuersatz
+	Quantity          float64   `json:"quantity"`          // Verkaufte Menge
+	BuyPrice          float64   `json:"buyPrice"`          // Kaufpreis
+	SellPrice         float64   `json:"sellPrice"`         // Verkaufspreis
+	Currency          string    `json:"currency"`          // Währung
 }

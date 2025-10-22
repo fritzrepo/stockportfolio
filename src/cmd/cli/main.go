@@ -122,7 +122,12 @@ func main() {
 	if readCsv {
 		fmt.Println("Reading transactions from CSV")
 
-		transactions := imports.ReadRealizedGainsCsv("../../../Investbilanz_Alex_und_Ingo.csv")
+		//Read depot name from user input
+		var depotName string
+		fmt.Print("Enter depot name for this transactions: ")
+		fmt.Scan(&depotName)
+
+		transactions := imports.ReadRealizedGainsCsv("../../../Investbilanz_Alex_und_Ingo.csv", depotName)
 
 		store := storage.GetFileDatabase(config.DatabaseFilePath)
 		depot := portfolio.GetDepot(store)

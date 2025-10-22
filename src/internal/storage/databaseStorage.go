@@ -19,7 +19,7 @@ func (s *DatabaseStorage) createDatabase(db *sql.DB) error {
 
 	// Create the transactions table
 	sqlStmt = "CREATE TABLE transactions (id TEXT(36) not null primary key, date DATETIME, transactionType TEXT, " +
-		"assetType TEXT, asset TEXT, tickerSymbol TEXT, quantity REAL, price REAL, fees REAL, currency TEXT);"
+		"assetType TEXT, asset TEXT, tickerSymbol TEXT, depotName TEXT, quantity REAL, price REAL, fees REAL, currency TEXT);"
 	_, err = db.Exec(sqlStmt)
 	if err != nil {
 		return fmt.Errorf("error at create table transactions. %w", err)
@@ -45,7 +45,7 @@ func (s *DatabaseStorage) createDatabase(db *sql.DB) error {
 	sqlStmt = "CREATE TABLE unclosed_trans (unclosed_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
 		"asset_id INTEGER NOT NULL, " +
 		"transaction_id TEXT, date DATETIME, transactionType TEXT, " +
-		"assetType TEXT, asset TEXT, tickerSymbol TEXT, quantity REAL, price REAL, fees REAL, currency TEXT, " +
+		"assetType TEXT, asset TEXT, tickerSymbol TEXT, depotName TEXT, quantity REAL, price REAL, fees REAL, currency TEXT, " +
 		"FOREIGN KEY (asset_id) REFERENCES unclosed_assets(asset_id) ON DELETE CASCADE);"
 	_, err = db.Exec(sqlStmt)
 	if err != nil {
@@ -60,7 +60,7 @@ func (s *DatabaseStorage) createDatabase(db *sql.DB) error {
 
 	// Create the RealizedGains table
 	sqlStmt = "CREATE TABLE realized_gains (id TEXT(36) not null primary key, sellTransactionId TEXT(36), buyTransactionId TEXT(36), " +
-		"asset TEXT, amount REAL, isProfit INTEGER, taxRate REAL, quantity REAL, buyPrice REAL, sellPrice REAL, currency TEXT, " +
+		"asset TEXT, depotName TEXT, amount REAL, isProfit INTEGER, taxRate REAL, quantity REAL, buyPrice REAL, sellPrice REAL, currency TEXT, " +
 		"FOREIGN KEY (sellTransactionId) REFERENCES transactions(id) ON DELETE CASCADE, " +
 		"FOREIGN KEY (buyTransactionId) REFERENCES transactions(id) ON DELETE CASCADE);"
 	_, err = db.Exec(sqlStmt)
@@ -72,7 +72,7 @@ func (s *DatabaseStorage) createDatabase(db *sql.DB) error {
 }
 
 func (s *DatabaseStorage) insertTransaction(db *sql.DB, transaction *Transaction) error {
-	sqlStmt := "INSERT INTO transactions (id, date, transactionType, assetType, asset, tickerSymbol, quantity, price, fees, currency) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+	sqlStmt := "INSERT INTO transactions (id, date, transactionType, assetType, asset, tickerSymbol, depotName, quantity, price, fees, currency) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
 	_, err := db.Exec(sqlStmt,
 		transaction.Id,
 		transaction.Date,
@@ -80,6 +80,7 @@ func (s *DatabaseStorage) insertTransaction(db *sql.DB, transaction *Transaction
 		transaction.AssetType,
 		transaction.Asset,
 		transaction.TickerSymbol,
+		transaction.DepotName,
 		transaction.Quantity,
 		transaction.Price,
 		transaction.Fees,
@@ -92,7 +93,7 @@ func (s *DatabaseStorage) insertTransaction(db *sql.DB, transaction *Transaction
 
 func (s *DatabaseStorage) loadAllTransactions(db *sql.DB) ([]Transaction, error) {
 	transactions := make([]Transaction, 0)
-	rows, err := db.Query("SELECT id, date, transactionType, assetType, asset, tickerSymbol, quantity, price, fees, currency FROM transactions")
+	rows, err := db.Query("SELECT id, date, transactionType, assetType, asset, tickerSymbol, depotName, quantity, price, fees, currency FROM transactions")
 	if err != nil {
 		return nil, err
 	}
@@ -107,6 +108,7 @@ func (s *DatabaseStorage) loadAllTransactions(db *sql.DB) ([]Transaction, error)
 			&transaction.AssetType,
 			&transaction.Asset,
 			&transaction.TickerSymbol,
+			&transaction.DepotName,
 			&transaction.Quantity,
 			&transaction.Price,
 			&transaction.Fees,
@@ -121,7 +123,7 @@ func (s *DatabaseStorage) loadAllTransactions(db *sql.DB) ([]Transaction, error)
 
 func (s *DatabaseStorage) existsTransaction(db *sql.DB, searchTransaction *Transaction) (*Transaction, error) {
 	var transaction Transaction
-	row := db.QueryRow("SELECT id, date, transactionType, assetType, asset, tickerSymbol, quantity, price, fees, currency FROM transactions WHERE date = ? AND transactionType = ? AND tickerSymbol = ? AND price = ? AND quantity = ?;",
+	row := db.QueryRow("SELECT id, date, transactionType, assetType, asset, tickerSymbol, depotName, quantity, price, fees, currency FROM transactions WHERE date = ? AND transactionType = ? AND tickerSymbol = ? AND price = ? AND quantity = ?;",
 		searchTransaction.Date,
 		searchTransaction.TransactionType,
 		searchTransaction.TickerSymbol,
@@ -135,6 +137,7 @@ func (s *DatabaseStorage) existsTransaction(db *sql.DB, searchTransaction *Trans
 		&transaction.AssetType,
 		&transaction.Asset,
 		&transaction.TickerSymbol,
+		&transaction.DepotName,
 		&transaction.Quantity,
 		&transaction.Price,
 		&transaction.Fees,
@@ -182,7 +185,7 @@ func (s *DatabaseStorage) insertUnclosedTransaction(db *sql.DB, trans Transactio
 	}
 
 	// Insert the transaction into unclosed
-	sqlStmt = "INSERT INTO unclosed_trans (asset_id, transaction_id, date, transactionType, assetType, asset, tickerSymbol, quantity, price, fees, currency) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+	sqlStmt = "INSERT INTO unclosed_trans (asset_id, transaction_id, date, transactionType, assetType, asset, tickerSymbol, depotName, quantity, price, fees, currency) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
 	_, err = db.Exec(sqlStmt,
 		assetId,
 		trans.Id,
@@ -191,6 +194,7 @@ func (s *DatabaseStorage) insertUnclosedTransaction(db *sql.DB, trans Transactio
 		trans.AssetType,
 		trans.Asset,
 		trans.TickerSymbol,
+		trans.DepotName,
 		trans.Quantity,
 		trans.Price,
 		trans.Fees,
@@ -252,7 +256,7 @@ func (s *DatabaseStorage) loadUnclosedTransactions(db *sql.DB) (map[string][]Tra
 
 	for _, tickerSymbol := range tickerSymbols {
 		sqlStmt := `SELECT transaction_id, date, transactionType, assetType, asset, tickerSymbol, 
-		quantity, price, fees, currency FROM unclosed_trans 
+		depotName, quantity, price, fees, currency FROM unclosed_trans 
 		WHERE asset_id = (SELECT asset_id FROM unclosed_assets WHERE ticker_symbol = ?);`
 
 		rows, err := db.Query(sqlStmt, tickerSymbol)
@@ -270,6 +274,7 @@ func (s *DatabaseStorage) loadUnclosedTransactions(db *sql.DB) (map[string][]Tra
 				&transaction.AssetType,
 				&transaction.Asset,
 				&transaction.TickerSymbol,
+				&transaction.DepotName,
 				&transaction.Quantity,
 				&transaction.Price,
 				&transaction.Fees,
@@ -284,12 +289,13 @@ func (s *DatabaseStorage) loadUnclosedTransactions(db *sql.DB) (map[string][]Tra
 }
 
 func (s *DatabaseStorage) insertRealizedGain(db *sql.DB, realizedGain *RealizedGain) error {
-	sqlStmt := "INSERT INTO realized_gains (id, sellTransactionId, buyTransactionId, asset, amount, isProfit, taxRate, quantity, buyPrice, sellPrice, currency) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+	sqlStmt := "INSERT INTO realized_gains (id, sellTransactionId, buyTransactionId, asset, depotName, amount, isProfit, taxRate, quantity, buyPrice, sellPrice, currency) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
 	_, err := db.Exec(sqlStmt,
 		realizedGain.Id,
 		realizedGain.SellTransactionId,
 		realizedGain.BuyTransactionId,
 		realizedGain.Asset,
+		realizedGain.DepotName,
 		realizedGain.Amount,
 		realizedGain.IsProfit,
 		realizedGain.TaxRate,
@@ -306,7 +312,7 @@ func (s *DatabaseStorage) insertRealizedGain(db *sql.DB, realizedGain *RealizedG
 func (s *DatabaseStorage) loadAllRealizedGains(db *sql.DB) ([]RealizedGain, error) {
 	realizedGains := make([]RealizedGain, 0)
 
-	rows, err := db.Query("SELECT id, sellTransactionId, buyTransactionId, asset, amount, isProfit, taxRate, quantity, buyPrice, sellPrice, currency FROM realized_gains")
+	rows, err := db.Query("SELECT id, sellTransactionId, buyTransactionId, asset, depotName, amount, isProfit, taxRate, quantity, buyPrice, sellPrice, currency FROM realized_gains")
 	if err != nil {
 		return nil, err
 	}
@@ -319,6 +325,7 @@ func (s *DatabaseStorage) loadAllRealizedGains(db *sql.DB) ([]RealizedGain, erro
 			&realizedGain.SellTransactionId,
 			&realizedGain.BuyTransactionId,
 			&realizedGain.Asset,
+			&realizedGain.DepotName,
 			&realizedGain.Amount,
 			&realizedGain.IsProfit,
 			&realizedGain.TaxRate,

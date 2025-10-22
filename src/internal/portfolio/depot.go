@@ -18,9 +18,10 @@ type DepotEntry struct {
 	AssetType    string  `json:"assetType"` //stock, crypto, forex
 	Asset        string  `json:"asset"`     //Name des Assets
 	TickerSymbol string  `json:"tickerSymbol"`
-	Quantity     float64 `json:"quantity"` //Anzahl der Assets
-	Price        float64 `json:"price"`    //Preis des Assets
-	Currency     string  `json:"currency"` //Währung des Assets currency. Unit ist zu speziell für json und db.
+	DepotName    string  `json:"depotName"` //Name des Depots
+	Quantity     float64 `json:"quantity"`  //Anzahl der Assets
+	Price        float64 `json:"price"`     //Preis des Assets
+	Currency     string  `json:"currency"`  //Währung des Assets currency. Unit ist zu speziell für json und db.
 }
 
 // TotalPrice berechnet und gibt den gesamt Ankaufspreis zurück
@@ -380,7 +381,7 @@ func (d *Depot) createDepotEntries() {
 			if !exists {
 				d.depotEntries[transaction.TickerSymbol] = DepotEntry{AssetType: transaction.AssetType, Asset: transaction.Asset,
 					TickerSymbol: transaction.TickerSymbol, Quantity: transaction.Quantity, Price: transaction.Price,
-					Currency: transaction.Currency}
+					DepotName: transaction.DepotName, Currency: transaction.Currency}
 			} else {
 				//Wenn das Asset schon im Depot ist, dann aktualisiere den (durchschnitts) Preis und die Anzahl
 				entry.Price = (entry.Price*entry.Quantity + transaction.Price*transaction.Quantity) / (entry.Quantity + transaction.Quantity)

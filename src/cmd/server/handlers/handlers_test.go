@@ -108,6 +108,7 @@ func TestAddTransactionHandler_Success(t *testing.T) {
 		Quantity:        10,
 		Price:           150.0,
 		AssetType:       "buy",
+		DepotName:       "testDepot",
 	}
 	body, _ := json.Marshal(tx)
 
@@ -218,6 +219,7 @@ func TestAddTransactionHandler_AddTransactionError(t *testing.T) {
 		Quantity:        10,
 		Price:           150.0,
 		AssetType:       "buy",
+		DepotName:       "testDepot",
 	}
 	body, _ := json.Marshal(tx)
 

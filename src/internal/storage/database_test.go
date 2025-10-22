@@ -35,6 +35,7 @@ func TestInsertTransaction(t *testing.T) {
 		Quantity:        10,
 		Price:           150,
 		Fees:            1.5,
+		DepotName:       "testDepot",
 		Currency:        "USD"}
 
 	err := store.AddTransaction(transaction)
@@ -55,6 +56,7 @@ func TestInsertTransaction(t *testing.T) {
 		transactions[0].Quantity != transaction.Quantity ||
 		transactions[0].Price != transaction.Price ||
 		transactions[0].Fees != transaction.Fees ||
+		transactions[0].DepotName != transaction.DepotName ||
 		transactions[0].Currency != transaction.Currency {
 		t.Errorf("Expected %+v, but got %+v", transaction, transactions[0])
 	}
@@ -73,6 +75,7 @@ func TestInsertUclosedTransaction(t *testing.T) {
 		Quantity:        10,
 		Price:           150,
 		Fees:            1.5,
+		DepotName:       "testDepot",
 		Currency:        "USD"}
 
 	err := store.AddUnclosedTransaction(*transaction)
@@ -115,6 +118,7 @@ func TestInsertUclosedTransaction(t *testing.T) {
 		Quantity:        20,
 		Price:           99,
 		Fees:            1.5,
+		DepotName:       "testDepot",
 		Currency:        "USD"}
 
 	err = store.AddUnclosedTransaction(*transaction)
@@ -149,6 +153,7 @@ func TestInsertRealizedGains(t *testing.T) {
 		Quantity:        10,
 		Price:           150,
 		Fees:            1.5,
+		DepotName:       "testDepot",
 		Currency:        "USD"}
 
 	err := store.AddTransaction(transaction)
@@ -166,6 +171,7 @@ func TestInsertRealizedGains(t *testing.T) {
 		Quantity:        10,
 		Price:           200,
 		Fees:            1.5,
+		DepotName:       "testDepot",
 		Currency:        "USD"}
 
 	err = store.AddTransaction(transaction)
@@ -184,6 +190,7 @@ func TestInsertRealizedGains(t *testing.T) {
 		Quantity:          10,
 		BuyPrice:          150.0,
 		SellPrice:         200.0,
+		DepotName:         "testDepot",
 		Currency:          "USD",
 	}
 
@@ -208,6 +215,7 @@ func TestInsertRealizedGains(t *testing.T) {
 		realizedGains[0].Quantity != gain.Quantity ||
 		realizedGains[0].BuyPrice != gain.BuyPrice ||
 		realizedGains[0].SellPrice != gain.SellPrice ||
+		realizedGains[0].DepotName != gain.DepotName ||
 		realizedGains[0].Currency != gain.Currency {
 		t.Errorf("Expected %+v, but got %+v", gain, realizedGains[0])
 	}
@@ -240,6 +248,7 @@ func TestLoadTransactionByParams(t *testing.T) {
 		Quantity:        10,
 		Price:           150,
 		Fees:            1.5,
+		DepotName:       "testDepot",
 		Currency:        "USD"}
 
 	err := store.AddTransaction(transaction)
@@ -270,6 +279,7 @@ func TestLoadTransactionByParams(t *testing.T) {
 		Quantity:        10,
 		Price:           150,
 		Fees:            1.5,
+		DepotName:       "testDepot",
 		Currency:        "EUR"}
 
 	loadedTransaction, err = store.ExistsTransaction(notExistingTransaction)

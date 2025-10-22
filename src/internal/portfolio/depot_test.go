@@ -124,6 +124,7 @@ func TestComputeTransactions(t *testing.T) {
 					math.Abs(expectedEntry.Quantity-matchedGain.Quantity) > epsilon ||
 					math.Abs(expectedEntry.BuyPrice-matchedGain.BuyPrice) > epsilon ||
 					math.Abs(expectedEntry.SellPrice-matchedGain.SellPrice) > epsilon ||
+					matchedGain.DepotName != expectedEntry.DepotName ||
 					matchedGain.Currency != expectedEntry.Currency {
 					t.Errorf("Realized gain for asset %s does not match expected values. Expected: %+v, Got: %+v", expectedEntry.Asset, expectedEntry, matchedGain)
 				}
@@ -146,6 +147,7 @@ func TestAddTransactions(t *testing.T) {
 		Quantity:        10,
 		Price:           150,
 		Fees:            1.5,
+		DepotName:       "TestDepot",
 		Currency:        "USD"}, true)
 
 	if err != nil {
@@ -161,6 +163,7 @@ func TestAddTransactions(t *testing.T) {
 		Quantity:        5,
 		Price:           200,
 		Fees:            1.5,
+		DepotName:       "TestDepot",
 		Currency:        "USD"}, true)
 
 	if err != nil {
@@ -173,7 +176,8 @@ func TestAddTransactions(t *testing.T) {
 		t.Errorf("Expected 1 realized gain, but got %d", len(realizedGains))
 	} else {
 		gain := realizedGains[0]
-		if gain.Asset != "Apple" {
+		if gain.Asset != "Apple" ||
+			gain.DepotName != "TestDepot" {
 			t.Errorf("Realized gain values do not match expected values: %+v", gain)
 		}
 	}

@@ -28,6 +28,7 @@ func calculateProfitLoss(sellTrans storage.Transaction, buyTransaction storage.T
 	result.Amount = calculateAmount(result.Quantity, buyTransaction.Price, sellTrans.Price, buyTransaction.Fees, sellTrans.Fees)
 	result.IsProfit = result.Amount > 0
 	result.Currency = sellTrans.Currency
+	result.DepotName = sellTrans.DepotName
 	return result
 }
 

@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func ReadRealizedGainsCsv(fileName string) []storage.Transaction {
+func ReadRealizedGainsCsv(fileName string, depotName string) []storage.Transaction {
 
 	var transactions []storage.Transaction
 
@@ -51,6 +51,7 @@ func ReadRealizedGainsCsv(fileName string) []storage.Transaction {
 		newTransaction.Price = f
 		newTransaction.Fees = 0.0
 		newTransaction.Currency = "EUR"
+		newTransaction.DepotName = depotName
 
 		if err != nil {
 			panic(err)
@@ -79,6 +80,7 @@ func ReadRealizedGainsCsv(fileName string) []storage.Transaction {
 		newTransaction.Price = f2
 		newTransaction.Fees = 0.0
 		newTransaction.Currency = "EUR"
+		newTransaction.DepotName = depotName
 
 		if err != nil {
 			panic(err)

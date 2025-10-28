@@ -176,7 +176,14 @@ func (d *Depot) ResetDepot() error {
 
 func (d *Depot) AddTransaction(newTransaction storage.Transaction, checkExists bool) error {
 
-	//Überprüfen, ob die Transaction schon existiert
+	// Valid new transaction
+	if newTransaction.TransactionType == "" || newTransaction.AssetType == "" || newTransaction.Asset == "" ||
+		newTransaction.DepotName == "" || newTransaction.TickerSymbol == "" || newTransaction.Quantity <= 0 ||
+		newTransaction.Price < 0 || newTransaction.Currency == "" {
+		return errors.New("invalid transaction data")
+	}
+
+	//Überprüfen, ob die Transaktion schon existiert
 	if checkExists {
 		transaction, err := d.store.ExistsTransaction(&newTransaction)
 		if err != nil {

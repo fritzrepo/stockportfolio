@@ -36,7 +36,7 @@ func main() {
 		log.Println("Depot successful initialized.")
 	}
 
-	var app = view.GetApp(depot)
+	var app = view.GetView(depot)
 
 	if err := app.Run(); err != nil {
 		panic(err)

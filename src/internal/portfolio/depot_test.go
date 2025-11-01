@@ -198,6 +198,7 @@ func TestDoNotAddAnExistingTransaction(t *testing.T) {
 		AssetType:       "stock",
 		Asset:           "Apple",
 		TickerSymbol:    "AAPL",
+		DepotName:       "TestDepot",
 		Quantity:        10,
 		Price:           150,
 		Fees:            1.5,

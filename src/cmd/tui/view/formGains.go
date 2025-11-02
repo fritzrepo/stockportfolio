@@ -16,9 +16,7 @@ func GetGainsForm() *tview.Flex {
 	var gainFlex = tview.NewFlex()
 
 	gainMenu := tview.NewList().
-		AddItem("Place holder", "", 'p', func() {
-			// Placeholder action
-		}).
+		AddItem("Place holder", "", 'p', nil).
 		AddItem("Back", "", 'b', func() {
 			pages.SwitchToPage("Main")
 		}).ShowSecondaryText(false)
@@ -26,6 +24,14 @@ func GetGainsForm() *tview.Flex {
 	gainFlex.SetDirection(tview.FlexRow).
 		AddItem(gainMenu, 4, 0, true).
 		AddItem(gainsTable, 0, 1, false)
+
+	// 98 = 'b'
+	gainFlex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Rune() == 98 {
+			pages.SwitchToPage("Main")
+		}
+		return event
+	})
 
 	return gainFlex
 }

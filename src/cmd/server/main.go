@@ -48,7 +48,7 @@ func init() {
 
 func loadAppConfig() {
 	var err error
-	appConfig, err = config.LoadConfigFromJSON("../../configs/appConfig.json")
+	appConfig, err = config.LoadConfigFromJSON("./appConfig.json")
 	if err != nil {
 		fmt.Println("Error loading config")
 		panic(err)

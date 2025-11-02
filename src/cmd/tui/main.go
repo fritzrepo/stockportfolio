@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/fritzrepo/stockportfolio/cmd/tui/view"
@@ -12,34 +11,37 @@ import (
 )
 
 func main() {
+	if err := run(); err != nil {
+		fmt.Fprintln(os.Stderr, "error:", err)
+		fmt.Println("\nPress Enter to exit...")
+		fmt.Scanln()
+		os.Exit(1)
+	}
+}
 
-	appConfig, err := config.LoadConfigFromJSON("../../configs/appConfig.json")
+func run() error {
+
+	appConfig, err := config.LoadConfigFromJSON("./appConfig.json")
 	if err != nil {
-		fmt.Println("Error loading config")
-		panic(err)
+		return err
 	}
 
 	_, err = os.Stat(appConfig.DatabaseFilePath)
 	dbNotExists := os.IsNotExist(err)
 	if dbNotExists {
-		fmt.Println("Database file does not exist.")
-		panic("Database not exists")
+		return fmt.Errorf("database not exists: %s", appConfig.DatabaseFilePath)
 	}
 
 	store := storage.GetFileDatabase(appConfig.DatabaseFilePath)
 	depot := portfolio.GetDepot(store)
+
 	err = depot.CalculateSecuritiesAccountBalance()
 	if err != nil {
-		log.Fatalf("Failed to calculate securities account balance: %v", err)
-		panic(err)
+		return err
 	} else {
-		log.Println("Depot successful initialized.")
+		fmt.Println("Depot successful initialized.")
 	}
 
 	var app = view.GetView(depot)
-
-	if err := app.Run(); err != nil {
-		panic(err)
-	}
-
+	return app.Run()
 }

@@ -43,6 +43,21 @@ func GetView(dep *portfolio.Depot) *tview.Application {
 		AddItem(mainMenu, 4, 0, true).
 		AddItem(mainTable, 0, 1, false)
 
+	// 97 = 'a', 113 = 'q', 103 = 'g'
+	mainFlex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Rune() == 113 {
+			app.Stop()
+		} else if event.Rune() == 97 {
+			formAddTransaction.Clear(true)
+			addTransactionForm()
+			pages.SwitchToPage("AddTransaction")
+		} else if event.Rune() == 103 {
+			loadAndDisplayGains()
+			pages.SwitchToPage("ShowGains")
+		}
+		return event
+	})
+
 	pages.AddPage("Main", mainFlex, true, true)
 	pages.AddPage("AddTransaction", formAddTransaction, true, false)
 	pages.AddPage("ShowGains", formShowGains, true, false)

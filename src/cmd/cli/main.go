@@ -40,7 +40,7 @@ func main() {
 		}
 	}
 
-	config, err := config.LoadConfigFromJSON("../../configs/appConfig.json")
+	config, err := config.LoadConfigFromJSON("./appConfig.json")
 	if err != nil {
 		// Fehlerbehandlung
 		fmt.Println("Error loading config")

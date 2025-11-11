@@ -30,3 +30,10 @@ data/
 ToDo.txt
 *.html
 *.csv
+
+# build outputs
+bin/
+bin
+
+# Secrets file
+.comdirectCredentials.json

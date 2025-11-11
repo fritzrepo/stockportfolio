@@ -1,0 +1,5 @@
+{
+    "url": "http://172.17.0.1:3000/todos",
+    "_url": "https://api.comdirect.de/api",
+    "oauthUrl": "https://api.comdirect.de/oauth/token"
+}

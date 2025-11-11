@@ -50,6 +50,15 @@
             "program": "${workspaceFolder}/src/cmd/tui/",
             "cwd": "${workspaceFolder}/src/cmd/tui",
             "console": "integratedTerminal"
+        },
+        {
+            "name": "ComdirectApi",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/src/cmd/comdirectApi/",
+            "cwd": "${workspaceFolder}/src/cmd/comdirectApi",
+            "console": "integratedTerminal"
         }
     ]
 }

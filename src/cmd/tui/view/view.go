@@ -22,6 +22,7 @@ func GetView(dep *portfolio.Depot) *tview.Application {
 	depot = dep
 
 	var formShowGains = GetGainsForm()
+	var formDebugSession = GetSessionDebugForm()
 
 	displayDepotEntries()
 
@@ -34,6 +35,9 @@ func GetView(dep *portfolio.Depot) *tview.Application {
 		AddItem("Show Gains", "", 'g', func() {
 			loadAndDisplayGains()
 			pages.SwitchToPage("ShowGains")
+		}).
+		AddItem("Session debug", "", 's', func() {
+			pages.SwitchToPage("DebugSession")
 		}).
 		AddItem("Quit", "", 'q', func() {
 			app.Stop()
@@ -61,6 +65,7 @@ func GetView(dep *portfolio.Depot) *tview.Application {
 	pages.AddPage("Main", mainFlex, true, true)
 	pages.AddPage("AddTransaction", formAddTransaction, true, false)
 	pages.AddPage("ShowGains", formShowGains, true, false)
+	pages.AddPage("DebugSession", formDebugSession, true, false)
 
 	return app.SetRoot(pages, true).EnableMouse(true)
 }

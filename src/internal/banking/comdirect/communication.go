@@ -51,6 +51,8 @@ func (c *Communication) getSessionStep1() (string, error) {
 
 	ctx := context.Background()
 	client, _ := NewClient(15 * time.Second)
+
+	//step 1: OAuth2 Token anfordern
 	var result ResponseOAuth2Flow
 
 	data := url.Values{}
@@ -73,6 +75,18 @@ func (c *Communication) getSessionStep1() (string, error) {
 	fmt.Println("KdNr:", result.KdNr)
 	fmt.Println("BpId:", result.BpId)
 	fmt.Println("KontaktId:", result.KontaktId)
+
+	if response.StatusCode != 200 {
+		return "", fmt.Errorf("failed to get access token, status code: %d", response.StatusCode)
+	}
+
+	//step 2
+	var sessionObj ResponseSessionObject
+
+	response, err = client.GetJSON(ctx, c.config.URL+"/session/clients/user/v1/sessions", &sessionObj)
+	if err != nil {
+		return "", err
+	}
 
 	return response.Status, nil
 }

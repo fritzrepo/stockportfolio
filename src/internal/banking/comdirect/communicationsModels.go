@@ -17,3 +17,9 @@ type ResponseOAuth2Flow struct {
 	BpId         int    `json:"bpid"`
 	KontaktId    int    `json:"kontaktId"`
 }
+
+type ResponseSessionObject struct {
+	Identifier       string `json:"identifier"`
+	SessionTanActive bool   `json:"sessionTanActive"`
+	Activated2FA     bool   `json:"activated2FA"`
+}

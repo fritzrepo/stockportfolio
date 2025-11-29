@@ -1,6 +1,6 @@
 ## Comdirect API
 #### Anmeldevorgang
-2.1 Access token holen
+2.1 Access token holen:<br>
 Credentials nicht als json, sondern als form-url-encoded senden.
 Session_id und request_id erzeugen. Wird in die headers des nächsten Requests eingetragen.
 
@@ -44,7 +44,7 @@ Access-Token ist 10 Minuten gültig.
 
 #### Datenfluss der Anmeldung
 
-Login 1. Schritt:
+Step1:
 
 Send:
 As form values (not json)
@@ -55,7 +55,7 @@ grant_type      password
 username        {{Zugangsnummer}}
 password        {{Pin}}
 
-Received:
+Receive succeded:
 {
   "access_token": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
   "token_type": "bearer",
@@ -67,4 +67,11 @@ Received:
   "kontaktId": XXXXXXXXXX
 }
 
+Receive failed:
+{
+  "error": "invalid_client",
+  "error_description": "Bad client credentials"
+}
 
+
+Step2:

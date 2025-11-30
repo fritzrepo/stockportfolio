@@ -59,6 +59,15 @@
             "program": "${workspaceFolder}/src/cmd/comdirectApi/",
             "cwd": "${workspaceFolder}/src/cmd/comdirectApi",
             "console": "integratedTerminal"
+        },
+        {
+            "name": "Playground",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/src/cmd/playground/",
+            "cwd": "${workspaceFolder}/src/cmd/playground",
+            "console": "integratedTerminal"
         }
     ]
 }

@@ -16,6 +16,52 @@ import (
 // Client ist ein leichter Wrapper um http.Client mit nützlichen Helfern.
 type Client struct {
 	http *http.Client
+	// defaultHeader are headers applied to every request if not already set on the request.
+	defaultHeader http.Header
+}
+
+// Context key and helpers for per-request headers stored in context.
+type ctxHeadersKeyType struct{}
+
+// WithHeaders returns a new context that carries a copy of the provided headers.
+func WithHeaders(ctx context.Context, h http.Header) context.Context {
+	if h == nil {
+		return ctx
+	}
+	copy := make(http.Header, len(h))
+	for k, vals := range h {
+		copy[k] = append([]string(nil), vals...)
+	}
+	return context.WithValue(ctx, ctxHeadersKeyType{}, copy)
+}
+
+// headersFromCtx extracts headers put into context via WithHeaders.
+func headersFromCtx(ctx context.Context) http.Header {
+	if ctx == nil {
+		return nil
+	}
+	if v := ctx.Value(ctxHeadersKeyType{}); v != nil {
+		if h, ok := v.(http.Header); ok {
+			return h
+		}
+	}
+	return nil
+}
+
+// SetDefaultHeaders sets client-wide headers. The header map is copied.
+func (c *Client) SetDefaultHeaders(h http.Header) {
+	if c == nil {
+		return
+	}
+	if h == nil {
+		c.defaultHeader = nil
+		return
+	}
+	copy := make(http.Header, len(h))
+	for k, vals := range h {
+		copy[k] = append([]string(nil), vals...)
+	}
+	c.defaultHeader = copy
 }
 
 // NewClient erstellt einen konfigurierten HTTP-Client.
@@ -37,6 +83,29 @@ func NewClient(timeout time.Duration) (*Client, error) {
 // Do führt ein *http.Request aus und liefert den Body (schließt response.Body).
 func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, []byte, error) {
 	req = req.WithContext(ctx)
+
+	// 1) inject headers from context (per-request). These have lower priority than explicit req headers.
+	if hdrs := headersFromCtx(req.Context()); hdrs != nil {
+		for k, vals := range hdrs {
+			if req.Header.Get(k) == "" {
+				for _, v := range vals {
+					req.Header.Add(k, v)
+				}
+			}
+		}
+	}
+
+	// 2) apply client default headers for any header not already set on the request
+	if c != nil && c.defaultHeader != nil {
+		for k, vals := range c.defaultHeader {
+			if req.Header.Get(k) == "" {
+				for _, v := range vals {
+					req.Header.Add(k, v)
+				}
+			}
+		}
+	}
+
 	resp, err := c.http.Do(req)
 	if err != nil {
 		return nil, nil, err
@@ -53,7 +122,6 @@ func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, []b
 // GetJSON macht eine GET-Anfrage und unmarshalt das JSON in out.
 func (c *Client) GetJSON(ctx context.Context, url string, out interface{}) (*http.Response, error) {
 	req, _ := http.NewRequest(http.MethodGet, url, nil)
-	req.Header.Set("Accept", "application/json")
 	resp, body, err := c.Do(ctx, req)
 	if err != nil {
 		return nil, err
@@ -79,7 +147,6 @@ func (c *Client) PostJSON(ctx context.Context, url string, payload interface{}, 
 	}
 	req, _ := http.NewRequest(http.MethodPost, url, &buf)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
 	resp, body, err := c.Do(ctx, req)
 	if err != nil {
 		return nil, err
@@ -109,7 +176,6 @@ func (c *Client) PostForm(ctx context.Context, urlStr string, data url.Values, o
 
 	req, _ := http.NewRequest(http.MethodPost, urlStr, bodyReader)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("Accept", "application/json")
 
 	resp, respBody, err := c.Do(ctx, req)
 	if err != nil {

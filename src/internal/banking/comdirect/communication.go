@@ -4,9 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 	"os"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type Config struct {
@@ -52,7 +55,11 @@ func (c *Communication) getSessionStep1() (string, error) {
 	ctx := context.Background()
 	client, _ := NewClient(15 * time.Second)
 
-	//step 1: OAuth2 Token anfordern
+	hdrs := http.Header{}
+	hdrs.Set("Accept", "application/json")
+	client.SetDefaultHeaders(hdrs)
+
+	//step 1: OAuth2 Token anfordern (OAuth2 Resource Owner Password Credentials Flow)
 	var result ResponseOAuth2Flow
 
 	data := url.Values{}
@@ -80,10 +87,45 @@ func (c *Communication) getSessionStep1() (string, error) {
 		return "", fmt.Errorf("failed to get access token, status code: %d", response.StatusCode)
 	}
 
-	//step 2
-	var sessionObj ResponseSessionObject
+	//step 2 (Session status)
+
+	// session id bauen
+	sessionId := uuid.New().String()
+
+	// Request ID bauen aus den letzten 9 Zeichen des aktuellen Timestamps in ms.
+	timestamp := time.Now().UnixNano() / int64(time.Millisecond)
+	timestampStr := fmt.Sprintf("%d", timestamp)
+	requestId := timestampStr[len(timestampStr)-9:]
+
+	//{"clientRequestId":{"sessionId":"{{session_id}}","requestId":"{{request_id}}"}}
+	infoValue := fmt.Sprintf("{\"clientRequestId\":{\"sessionId\":\"%s\",\"requestId\":\"%s\"}}", sessionId, requestId)
+
+	var sessionObj []ResponseSessionObject
+
+	//Headers setzen
+	reqHdr := http.Header{}
+	reqHdr.Set("Content-Type", "application/json")
+	reqHdr.Set("Authorization", "Bearer "+result.AccessToken)
+	reqHdr.Set("x-http-request-info", infoValue)
+
+	ctx = WithHeaders(ctx, reqHdr)
 
 	response, err = client.GetJSON(ctx, c.config.URL+"/session/clients/user/v1/sessions", &sessionObj)
+	if err != nil {
+		return "", err
+	}
+
+	if response.StatusCode != 200 {
+		return "", fmt.Errorf("failed to get session id, status code: %d", response.StatusCode)
+	}
+
+	//step 3 hier weitermachen
+	//Headers setzen
+	reqHdr = http.Header{}
+	reqHdr.Set("Authorization", "Bearer SOME_PER_REQUEST_TOKEN")
+	ctx = WithHeaders(ctx, reqHdr)
+
+	response, err = client.GetJSON(ctx, c.config.URL+"/session/clients/user/v1/sessions/", &sessionObj)
 	if err != nil {
 		return "", err
 	}

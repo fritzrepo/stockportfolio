@@ -191,3 +191,28 @@ func (c *Client) PostForm(ctx context.Context, urlStr string, data url.Values, o
 	}
 	return resp, nil
 }
+
+// PatchJSON sendet JSON per PATCH und optional unmarshalt die Antwort in out.
+func (c *Client) PatchJSON(ctx context.Context, url string, payload interface{}, out interface{}) (*http.Response, error) {
+	var buf bytes.Buffer
+	if payload != nil {
+		if err := json.NewEncoder(&buf).Encode(payload); err != nil {
+			return nil, err
+		}
+	}
+	req, _ := http.NewRequest(http.MethodPatch, url, &buf)
+	req.Header.Set("Content-Type", "application/json")
+	resp, body, err := c.Do(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode >= 400 {
+		return resp, fmt.Errorf("http %d: %s", resp.StatusCode, string(body))
+	}
+	if out != nil && len(body) > 0 {
+		if err := json.Unmarshal(body, out); err != nil {
+			return resp, err
+		}
+	}
+	return resp, nil
+}

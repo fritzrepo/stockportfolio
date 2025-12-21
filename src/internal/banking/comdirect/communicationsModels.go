@@ -18,8 +18,20 @@ type ResponseOAuth2Flow struct {
 	KontaktId    int    `json:"kontaktId"`
 }
 
-type ResponseSessionObject struct {
+type SessionObject struct {
 	Identifier       string `json:"identifier"`
 	SessionTanActive bool   `json:"sessionTanActive"`
 	Activated2FA     bool   `json:"activated2FA"`
+}
+
+type OnceAuthenticationInfoHeader struct {
+	Id             string   `json:"id"`
+	Typ            string   `json:"typ"`
+	AvailableTypes []string `json:"availableTypes"`
+	Link           struct {
+		Href   string `json:"href"`
+		Rel    string `json:"rel"`
+		Method string `json:"method"`
+		Type   string `json:"type"`
+	} `json:"link"`
 }

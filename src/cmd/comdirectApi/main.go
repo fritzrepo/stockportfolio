@@ -9,13 +9,13 @@ import (
 
 func main() {
 
-	log.Println("Start comdirect API.")
 	comm, err := comdirect.GetCommunication("./comdirectConfig.json", "./.comdirectCredentials.json")
 	if err != nil {
 		log.Println("Error getting communication service:", err)
 		return
 	}
 
+	log.Println("Get access token for comdirect API.")
 	message, err := comm.StartSession()
 	if err != nil {
 		log.Println("Error starting session:", err)

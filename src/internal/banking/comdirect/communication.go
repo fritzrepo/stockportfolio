@@ -18,10 +18,13 @@ type Config struct {
 }
 
 type Communication struct {
-	config       Config
-	creds        Credentials
-	accessToken  string
-	refreshToken string
+	config        Config
+	creds         Credentials
+	accessToken   string
+	refreshToken  string
+	ticker        *time.Ticker
+	stopChan      chan struct{}
+	isTimerActive bool
 }
 
 func GetCommunication(pathToConfig string, pathToCreds string) (*Communication, error) {
@@ -36,8 +39,12 @@ func GetCommunication(pathToConfig string, pathToCreds string) (*Communication, 
 		return nil, err
 	}
 	return &Communication{
-		config: config,
-		creds:  creds,
+		config:        config,
+		creds:         creds,
+		accessToken:   "",
+		refreshToken:  "",
+		stopChan:      make(chan struct{}),
+		isTimerActive: false,
 	}, nil
 }
 
@@ -48,6 +55,7 @@ func (c *Communication) StartSession() (string, error) {
 
 func (c *Communication) EndSession() error {
 	// For Comdirect is no explicit session termination required
+	c.stopTimer()
 	return nil
 }
 
@@ -225,5 +233,80 @@ func loadConfig(path string, out interface{}) error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+// startTimer starts a periodic timer that calls the specified function at the given interval
+func (c *Communication) startTimer(interval time.Duration, callback func()) error {
+	if c.isTimerActive {
+		return fmt.Errorf("timer is already active")
+	}
+
+	c.ticker = time.NewTicker(interval)
+	c.isTimerActive = true
+
+	go func() {
+		defer func() {
+			c.isTimerActive = false
+		}()
+
+		for {
+			select {
+			case <-c.ticker.C:
+				// Call the callback function
+				callback()
+			case <-c.stopChan:
+				// Timer was stopped
+				return
+			}
+		}
+	}()
+
+	fmt.Printf("Timer started with interval: %v\n", interval)
+	return nil
+}
+
+// stopTimer stops the periodic timer
+func (c *Communication) stopTimer() {
+	if !c.isTimerActive {
+		return
+	}
+
+	if c.ticker != nil {
+		c.ticker.Stop()
+	}
+
+	// Signal the goroutine to stop
+	close(c.stopChan)
+
+	// Recreate the stop channel for potential future use
+	c.stopChan = make(chan struct{})
+
+	c.isTimerActive = false
+	fmt.Println("Timer stopped")
+}
+
+// IsTimerActive returns whether the timer is currently running
+func (c *Communication) IsTimerActive() bool {
+	return c.isTimerActive
+}
+
+// RefreshTokenPeriodically starts a timer that periodically refreshes the access token
+func (c *Communication) RefreshTokenPeriodically(interval time.Duration) error {
+	return c.startTimer(interval, func() {
+		fmt.Println("Refreshing access token...")
+		err := c.refreshAccessToken()
+		if err != nil {
+			fmt.Printf("Error refreshing token: %v\n", err)
+		} else {
+			fmt.Println("Access token refreshed successfully")
+		}
+	})
+}
+
+// Hier weiter machen. Implementierung des refresh token Workflows noch offen
+func (c *Communication) refreshAccessToken() error {
+	// Implementation for refreshing the access token
+
 	return nil
 }

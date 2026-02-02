@@ -311,7 +311,6 @@ func (c *Communication) RefreshTokenPeriodically(interval time.Duration) error {
 	})
 }
 
-// Hier weiter machen. Implementierung des refresh token Workflows noch offen
 func (c *Communication) refreshAccessToken() error {
 
 	hdrs := http.Header{}

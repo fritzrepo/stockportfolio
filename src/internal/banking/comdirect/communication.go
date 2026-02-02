@@ -25,6 +25,8 @@ type Communication struct {
 	ticker        *time.Ticker
 	stopChan      chan struct{}
 	isTimerActive bool
+	client        *Client
+	ctx           context.Context
 }
 
 func GetCommunication(pathToConfig string, pathToCreds string) (*Communication, error) {
@@ -38,6 +40,14 @@ func GetCommunication(pathToConfig string, pathToCreds string) (*Communication, 
 	if err != nil {
 		return nil, err
 	}
+
+	httpCtx := context.Background()
+	httpClient, _ := NewClient(15 * time.Second)
+
+	hdrs := http.Header{}
+	hdrs.Set("Accept", "application/json")
+	httpClient.SetDefaultHeaders(hdrs)
+
 	return &Communication{
 		config:        config,
 		creds:         creds,
@@ -45,6 +55,8 @@ func GetCommunication(pathToConfig string, pathToCreds string) (*Communication, 
 		refreshToken:  "",
 		stopChan:      make(chan struct{}),
 		isTimerActive: false,
+		client:        httpClient,
+		ctx:           httpCtx,
 	}, nil
 }
 
@@ -63,13 +75,6 @@ func (c *Communication) getAccessTokens() (string, error) {
 
 	fmt.Println("Start workflow for getting access token...")
 
-	ctx := context.Background()
-	client, _ := NewClient(15 * time.Second)
-
-	hdrs := http.Header{}
-	hdrs.Set("Accept", "application/json")
-	client.SetDefaultHeaders(hdrs)
-
 	//step 1: OAuth2 Token anfordern (OAuth2 Resource Owner Password Credentials Flow)
 	var token ResponseOAuth2Flow
 
@@ -80,7 +85,7 @@ func (c *Communication) getAccessTokens() (string, error) {
 	data.Set("username", c.creds.AccountID)
 	data.Set("password", c.creds.Pin)
 
-	response, err := client.PostForm(ctx, c.config.OAuthURL, data, &token)
+	response, err := c.client.PostForm(c.ctx, c.config.OAuthURL, data, &token)
 	if err != nil {
 		return "", err
 	}
@@ -110,9 +115,9 @@ func (c *Communication) getAccessTokens() (string, error) {
 	reqHdr.Set("Authorization", "Bearer "+token.AccessToken)
 	reqHdr.Set("x-http-request-info", infoValue)
 
-	ctx = WithHeaders(ctx, reqHdr)
+	c.ctx = WithHeaders(c.ctx, reqHdr)
 
-	response, err = client.GetJSON(ctx, c.config.URL+"/session/clients/user/v1/sessions", &sessionObjs)
+	response, err = c.client.GetJSON(c.ctx, c.config.URL+"/session/clients/user/v1/sessions", &sessionObjs)
 	if err != nil {
 		return "", err
 	}
@@ -136,7 +141,7 @@ func (c *Communication) getAccessTokens() (string, error) {
 	//Headers bleiben gleich
 	sessionUuid := sessionObjs[0].Identifier
 	validateUrl := fmt.Sprintf("%s/session/clients/user/v1/sessions/%s/validate", c.config.URL, sessionUuid)
-	response, err = client.PostJSON(ctx, validateUrl, &requestSessionObj, &responseSessionObj)
+	response, err = c.client.PostJSON(c.ctx, validateUrl, &requestSessionObj, &responseSessionObj)
 	if err != nil {
 		return "", err
 	}
@@ -180,9 +185,9 @@ func (c *Communication) getAccessTokens() (string, error) {
 	// Setzen des once authentication info headers
 	// x-once-authentication-info:{"id":"7654321"} //id der Challenge
 	reqHdr.Set("x-once-authentication-info", fmt.Sprintf("{\"id\":\"%s\"}", onceAuthInfo.Id))
-	ctx = WithHeaders(ctx, reqHdr)
+	c.ctx = WithHeaders(c.ctx, reqHdr)
 	activateUrl := fmt.Sprintf("%s/session/clients/user/v1/sessions/%s", c.config.URL, sessionUuid)
-	response, err = client.PatchJSON(ctx, activateUrl, &requestSessionObj, &responseSessionObj)
+	response, err = c.client.PatchJSON(c.ctx, activateUrl, &requestSessionObj, &responseSessionObj)
 	if err != nil {
 		return "", err
 	}
@@ -197,9 +202,9 @@ func (c *Communication) getAccessTokens() (string, error) {
 	}
 
 	// Step5: Zugriffsrechte innerhalb der Session erweitern
-	hdrs = http.Header{}
+	hdrs := http.Header{}
 	hdrs.Set("Accept", "application/json")
-	client.SetDefaultHeaders(hdrs)
+	c.client.SetDefaultHeaders(hdrs)
 
 	data = url.Values{}
 	data.Set("client_id", c.creds.ClientID)
@@ -207,7 +212,7 @@ func (c *Communication) getAccessTokens() (string, error) {
 	data.Set("grant_type", "cd_secondary")
 	data.Set("token", token.AccessToken)
 
-	response, err = client.PostForm(ctx, c.config.OAuthURL, data, &token)
+	response, err = c.client.PostForm(c.ctx, c.config.OAuthURL, data, &token)
 	if err != nil {
 		return "", err
 	}
@@ -217,6 +222,7 @@ func (c *Communication) getAccessTokens() (string, error) {
 
 	fmt.Println("Session-TAN activated successfully.")
 	fmt.Println("Scope:", token.Scope)
+	fmt.Printf("Token expires in %d seconds\n", token.ExpiresIn)
 
 	return response.Status, nil
 }
@@ -297,6 +303,7 @@ func (c *Communication) RefreshTokenPeriodically(interval time.Duration) error {
 		fmt.Println("Refreshing access token...")
 		err := c.refreshAccessToken()
 		if err != nil {
+			c.stopTimer()
 			fmt.Printf("Error refreshing token: %v\n", err)
 		} else {
 			fmt.Println("Access token refreshed successfully")
@@ -306,7 +313,32 @@ func (c *Communication) RefreshTokenPeriodically(interval time.Duration) error {
 
 // Hier weiter machen. Implementierung des refresh token Workflows noch offen
 func (c *Communication) refreshAccessToken() error {
-	// Implementation for refreshing the access token
+
+	hdrs := http.Header{}
+	hdrs.Set("Accept", "application/json")
+	c.client.SetDefaultHeaders(hdrs)
+
+	data := url.Values{}
+	data.Set("client_id", c.creds.ClientID)
+	data.Set("client_secret", c.creds.ClientSecret)
+	data.Set("grant_type", "refresh_token")
+	data.Set("refresh_token", c.refreshToken)
+
+	var token ResponseOAuth2Flow
+
+	response, err := c.client.PostForm(c.ctx, c.config.OAuthURL, data, &token)
+	if err != nil {
+		return err
+	}
+
+	if response.StatusCode != 200 {
+		return fmt.Errorf("failed to refresh access token, status code: %d", response.StatusCode)
+	}
+
+	c.accessToken = token.AccessToken
+	c.refreshToken = token.RefreshToken
+
+	fmt.Printf("Token expires in %d seconds\n", token.ExpiresIn)
 
 	return nil
 }

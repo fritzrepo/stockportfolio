@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/fritzrepo/stockportfolio/internal/banking/comdirect"
 )
@@ -25,6 +26,10 @@ func main() {
 
 	fmt.Println("Session started successfully.")
 	fmt.Println("Message:", message)
+
+	fmt.Println("Starting periodic refresh of access token every 9 minutes...")
+	comm.RefreshTokenPeriodically(9 * time.Minute)
+
 	fmt.Println("\nPress Enter to exit...")
 	fmt.Scanln()
 }

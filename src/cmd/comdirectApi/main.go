@@ -27,8 +27,8 @@ func main() {
 	fmt.Println("Session started successfully.")
 	fmt.Println("Message:", message)
 
-	fmt.Println("Starting periodic refresh of access token every 9 minutes...")
-	comm.RefreshTokenPeriodically(9 * time.Minute)
+	fmt.Println("Starting periodic refresh of access token every 2 minutes...")
+	comm.RefreshTokenPeriodically(2 * time.Minute)
 
 	fmt.Println("\nPress Enter to exit...")
 	fmt.Scanln()

@@ -337,3 +337,23 @@ func (c *Communication) refreshAccessToken() error {
 
 	return nil
 }
+
+func (c *Communication) revokeToken() error {
+
+	data := url.Values{}
+	data.Set("client_id", c.creds.ClientID)
+	data.Set("client_secret", c.creds.ClientSecret)
+	data.Set("token", c.accessToken)
+
+	response, err := c.client.PostForm(c.ctx, c.config.OAuthURL+"/revoke", data, nil)
+	if err != nil {
+		return err
+	}
+
+	if response.StatusCode != 200 {
+		return fmt.Errorf("failed to revoke token, status code: %d", response.StatusCode)
+	}
+
+	fmt.Println("Access token revoked successfully.")
+	return nil
+}

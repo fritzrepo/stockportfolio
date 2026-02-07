@@ -71,6 +71,25 @@ func (c *Communication) EndSession() error {
 	return nil
 }
 
+// RefreshTokenPeriodically starts a timer that periodically refreshes the access token
+func (c *Communication) RefreshTokenPeriodically(interval time.Duration) error {
+	return c.startTimer(interval, func() {
+		fmt.Println("Refreshing access token...")
+		err := c.refreshAccessToken()
+		if err != nil {
+			c.stopTimer()
+			fmt.Printf("Error refreshing token: %v\n", err)
+		} else {
+			fmt.Println("Access token refreshed successfully")
+		}
+	})
+}
+
+// IsTimerActive returns whether the timer is currently running
+func (c *Communication) IsTimerActive() bool {
+	return c.isTimerActive
+}
+
 func (c *Communication) getAccessTokens() (string, error) {
 
 	fmt.Println("Start workflow for getting access token...")
@@ -202,9 +221,9 @@ func (c *Communication) getAccessTokens() (string, error) {
 	}
 
 	// Step5: Zugriffsrechte innerhalb der Session erweitern
-	hdrs := http.Header{}
-	hdrs.Set("Accept", "application/json")
-	c.client.SetDefaultHeaders(hdrs)
+
+	// Headers aus dem ctx löschen, damit sie nicht in diesem Request mitgeschickt werden
+	c.ctx = WithHeaders(c.ctx, http.Header{})
 
 	data = url.Values{}
 	data.Set("client_id", c.creds.ClientID)
@@ -292,30 +311,7 @@ func (c *Communication) stopTimer() {
 	fmt.Println("Timer stopped")
 }
 
-// IsTimerActive returns whether the timer is currently running
-func (c *Communication) IsTimerActive() bool {
-	return c.isTimerActive
-}
-
-// RefreshTokenPeriodically starts a timer that periodically refreshes the access token
-func (c *Communication) RefreshTokenPeriodically(interval time.Duration) error {
-	return c.startTimer(interval, func() {
-		fmt.Println("Refreshing access token...")
-		err := c.refreshAccessToken()
-		if err != nil {
-			c.stopTimer()
-			fmt.Printf("Error refreshing token: %v\n", err)
-		} else {
-			fmt.Println("Access token refreshed successfully")
-		}
-	})
-}
-
 func (c *Communication) refreshAccessToken() error {
-
-	hdrs := http.Header{}
-	hdrs.Set("Accept", "application/json")
-	c.client.SetDefaultHeaders(hdrs)
 
 	data := url.Values{}
 	data.Set("client_id", c.creds.ClientID)

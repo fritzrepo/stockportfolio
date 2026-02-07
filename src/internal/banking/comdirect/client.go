@@ -82,8 +82,6 @@ func NewClient(timeout time.Duration) (*Client, error) {
 
 // Do führt ein *http.Request aus und liefert den Body (schließt response.Body).
 func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, []byte, error) {
-	req = req.WithContext(ctx)
-
 	// 1) inject headers from context (per-request). These have lower priority than explicit req headers.
 	if hdrs := headersFromCtx(req.Context()); hdrs != nil {
 		for k, vals := range hdrs {
@@ -106,6 +104,15 @@ func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, []b
 		}
 	}
 
+	// Headers auf Console ausgeben (Debugging)
+	fmt.Printf("Request: %s %s\n", req.Method, req.URL)
+	for k, vals := range req.Header {
+		for _, v := range vals {
+			fmt.Printf("  %s: %s\n", k, v)
+		}
+	}
+	fmt.Println()
+
 	resp, err := c.http.Do(req)
 	if err != nil {
 		return nil, nil, err
@@ -121,7 +128,7 @@ func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, []b
 
 // GetJSON macht eine GET-Anfrage und unmarshalt das JSON in out.
 func (c *Client) GetJSON(ctx context.Context, url string, out interface{}) (*http.Response, error) {
-	req, _ := http.NewRequest(http.MethodGet, url, nil)
+	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	resp, body, err := c.Do(ctx, req)
 	if err != nil {
 		return nil, err
@@ -145,7 +152,7 @@ func (c *Client) PostJSON(ctx context.Context, url string, payload interface{}, 
 			return nil, err
 		}
 	}
-	req, _ := http.NewRequest(http.MethodPost, url, &buf)
+	req, _ := http.NewRequestWithContext(ctx, http.MethodPost, url, &buf)
 	req.Header.Set("Content-Type", "application/json")
 	resp, body, err := c.Do(ctx, req)
 	if err != nil {
@@ -174,7 +181,7 @@ func (c *Client) PostForm(ctx context.Context, urlStr string, data url.Values, o
 		bodyReader = bytes.NewReader(nil)
 	}
 
-	req, _ := http.NewRequest(http.MethodPost, urlStr, bodyReader)
+	req, _ := http.NewRequestWithContext(ctx, http.MethodPost, urlStr, bodyReader)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, respBody, err := c.Do(ctx, req)
@@ -200,7 +207,7 @@ func (c *Client) PatchJSON(ctx context.Context, url string, payload interface{},
 			return nil, err
 		}
 	}
-	req, _ := http.NewRequest(http.MethodPatch, url, &buf)
+	req, _ := http.NewRequestWithContext(ctx, http.MethodPatch, url, &buf)
 	req.Header.Set("Content-Type", "application/json")
 	resp, body, err := c.Do(ctx, req)
 	if err != nil {
@@ -215,4 +222,10 @@ func (c *Client) PatchJSON(ctx context.Context, url string, payload interface{},
 		}
 	}
 	return resp, nil
+}
+
+func (c *Client) Delete(ctx context.Context, url string) (*http.Response, error) {
+	req, _ := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
+	resp, _, err := c.Do(ctx, req)
+	return resp, err
 }

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -20,16 +21,18 @@ type Config struct {
 type Communication struct {
 	config        Config
 	creds         Credentials
+	mu            sync.RWMutex
 	accessToken   string
 	refreshToken  string
 	ticker        *time.Ticker
 	stopChan      chan struct{}
 	isTimerActive bool
 	client        *Client
-	ctx           context.Context
+	sessionCtx    context.Context
+	sessionCancel context.CancelFunc
 }
 
-func GetCommunication(pathToConfig string, pathToCreds string) (*Communication, error) {
+func NewCommunication(pathToConfig string, pathToCreds string) (*Communication, error) {
 	var creds Credentials
 	err := loadConfig(pathToCreds, &creds)
 	if err != nil {
@@ -41,8 +44,10 @@ func GetCommunication(pathToConfig string, pathToCreds string) (*Communication, 
 		return nil, err
 	}
 
-	httpCtx := context.Background()
-	httpClient, _ := NewClient(15 * time.Second)
+	httpClient, err := NewClient(15 * time.Second)
+	if err != nil {
+		return nil, err
+	}
 
 	hdrs := http.Header{}
 	hdrs.Set("Accept", "application/json")
@@ -53,21 +58,39 @@ func GetCommunication(pathToConfig string, pathToCreds string) (*Communication, 
 		creds:         creds,
 		accessToken:   "",
 		refreshToken:  "",
-		stopChan:      make(chan struct{}),
+		stopChan:      nil,
 		isTimerActive: false,
 		client:        httpClient,
-		ctx:           httpCtx,
 	}, nil
 }
 
-func (c *Communication) StartSession() (string, error) {
+func (c *Communication) StartSession() error {
 	// Implementation for starting a session with Comdirect
-	return c.getAccessTokens()
+	if c.sessionCtx != nil {
+		return fmt.Errorf("session already started")
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	c.sessionCtx = ctx
+	c.sessionCancel = cancel
+
+	err := c.getAccessTokens()
+	if err != nil {
+		c.EndSession()
+		return err
+	}
+	return nil
 }
 
 func (c *Communication) EndSession() error {
 	// For Comdirect is no explicit session termination required
 	c.stopTimer()
+	c.revokeToken()
+	if c.sessionCancel != nil {
+		c.sessionCancel()
+		c.sessionCancel = nil
+		c.sessionCtx = nil
+	}
 	return nil
 }
 
@@ -90,9 +113,11 @@ func (c *Communication) IsTimerActive() bool {
 	return c.isTimerActive
 }
 
-func (c *Communication) getAccessTokens() (string, error) {
+func (c *Communication) getAccessTokens() error {
 
 	fmt.Println("Start workflow for getting access token...")
+	var response *http.Response
+	var err error
 
 	//step 1: OAuth2 Token anfordern (OAuth2 Resource Owner Password Credentials Flow)
 	var token ResponseOAuth2Flow
@@ -104,13 +129,19 @@ func (c *Communication) getAccessTokens() (string, error) {
 	data.Set("username", c.creds.AccountID)
 	data.Set("password", c.creds.Pin)
 
-	response, err := c.client.PostForm(c.ctx, c.config.OAuthURL, data, &token)
-	if err != nil {
-		return "", err
+	// Code block, damit "defer cancel()" möglichst nah am letzten Gebrauch des Contexts ist.
+	{
+		ctx, cancel := context.WithTimeout(c.sessionCtx, 5*time.Second)
+		defer cancel()
+
+		response, err = c.client.PostForm(ctx, c.config.OAuthURL, data, &token)
+		if err != nil {
+			return err
+		}
 	}
 
 	if response.StatusCode != 200 {
-		return "", fmt.Errorf("failed to get access token, status code: %d", response.StatusCode)
+		return fmt.Errorf("failed to get access token, status code: %d", response.StatusCode)
 	}
 
 	//step 2 (Session status)
@@ -134,15 +165,20 @@ func (c *Communication) getAccessTokens() (string, error) {
 	reqHdr.Set("Authorization", "Bearer "+token.AccessToken)
 	reqHdr.Set("x-http-request-info", infoValue)
 
-	c.ctx = WithHeaders(c.ctx, reqHdr)
+	{
+		ctx2, cancel := context.WithTimeout(c.sessionCtx, 5*time.Second)
+		defer cancel()
 
-	response, err = c.client.GetJSON(c.ctx, c.config.URL+"/session/clients/user/v1/sessions", &sessionObjs)
-	if err != nil {
-		return "", err
+		ctx2 = WithHeaders(ctx2, reqHdr)
+
+		response, err = c.client.GetJSON(ctx2, c.config.URL+"/session/clients/user/v1/sessions", &sessionObjs)
+		if err != nil {
+			return err
+		}
 	}
 
 	if response.StatusCode != 200 {
-		return "", fmt.Errorf("failed to get session id, status code: %d", response.StatusCode)
+		return fmt.Errorf("failed to get session id, status code: %d", response.StatusCode)
 	}
 
 	//step 3 Anlage Validierung einer Session-TAN
@@ -157,36 +193,44 @@ func (c *Communication) getAccessTokens() (string, error) {
 	requestSessionObj.SessionTanActive = true
 	requestSessionObj.Activated2FA = true
 
-	//Headers bleiben gleich
 	sessionUuid := sessionObjs[0].Identifier
-	validateUrl := fmt.Sprintf("%s/session/clients/user/v1/sessions/%s/validate", c.config.URL, sessionUuid)
-	response, err = c.client.PostJSON(c.ctx, validateUrl, &requestSessionObj, &responseSessionObj)
-	if err != nil {
-		return "", err
+
+	{
+		//Headers bleiben gleich
+		ctx3, cancel := context.WithTimeout(c.sessionCtx, 5*time.Second)
+		defer cancel()
+
+		ctx3 = WithHeaders(ctx3, reqHdr)
+
+		validateUrl := fmt.Sprintf("%s/session/clients/user/v1/sessions/%s/validate", c.config.URL, sessionUuid)
+		response, err = c.client.PostJSON(ctx3, validateUrl, &requestSessionObj, &responseSessionObj)
+		if err != nil {
+			return err
+		}
 	}
 
 	if response.StatusCode != 201 {
-		return "", fmt.Errorf("failed to validate session, status code: %d", response.StatusCode)
+		return fmt.Errorf("failed to validate session, status code: %d", response.StatusCode)
 	}
 
 	//x-once-authentication-info Header auswerten
 	authInfoHeader := response.Header.Get("x-once-authentication-info")
 	if authInfoHeader == "" {
-		return "", fmt.Errorf("missing x-once-authentication-info header in response")
+		return fmt.Errorf("missing x-once-authentication-info header in response")
 	}
 
 	var onceAuthInfo OnceAuthenticationInfoHeader
 	err = json.Unmarshal([]byte(authInfoHeader), &onceAuthInfo)
 	if err != nil {
-		return "", fmt.Errorf("failed to unmarshal x-once-authentication-info header: %v", err)
+		return fmt.Errorf("failed to unmarshal x-once-authentication-info header: %v", err)
 	}
 
 	// Prüfen
 	if !responseSessionObj.SessionTanActive {
-		return "", fmt.Errorf("session tan not active after validation")
+		return fmt.Errorf("session tan not active after validation")
 	}
 	if (onceAuthInfo.Id == "") || (onceAuthInfo.Typ == "") {
-		return "", fmt.Errorf("invalid once authentication info received")
+		return fmt.Errorf("invalid once authentication info received")
 	}
 
 	fmt.Println()
@@ -204,26 +248,30 @@ func (c *Communication) getAccessTokens() (string, error) {
 	// Setzen des once authentication info headers
 	// x-once-authentication-info:{"id":"7654321"} //id der Challenge
 	reqHdr.Set("x-once-authentication-info", fmt.Sprintf("{\"id\":\"%s\"}", onceAuthInfo.Id))
-	c.ctx = WithHeaders(c.ctx, reqHdr)
-	activateUrl := fmt.Sprintf("%s/session/clients/user/v1/sessions/%s", c.config.URL, sessionUuid)
-	response, err = c.client.PatchJSON(c.ctx, activateUrl, &requestSessionObj, &responseSessionObj)
-	if err != nil {
-		return "", err
+
+	{
+		ctx4, cancel := context.WithTimeout(c.sessionCtx, 5*time.Second)
+		defer cancel()
+
+		ctx4 = WithHeaders(ctx4, reqHdr)
+
+		activateUrl := fmt.Sprintf("%s/session/clients/user/v1/sessions/%s", c.config.URL, sessionUuid)
+		response, err = c.client.PatchJSON(ctx4, activateUrl, &requestSessionObj, &responseSessionObj)
+		if err != nil {
+			return err
+		}
 	}
 
 	if response.StatusCode != 200 {
-		return "", fmt.Errorf("failed to activate session tan, status code: %d", response.StatusCode)
+		return fmt.Errorf("failed to activate session tan, status code: %d", response.StatusCode)
 	}
 
 	// Prüfen
 	if !responseSessionObj.SessionTanActive {
-		return "", fmt.Errorf("session tan not active after validation")
+		return fmt.Errorf("session tan not active after validation")
 	}
 
 	// Step5: Zugriffsrechte innerhalb der Session erweitern
-
-	// Headers aus dem ctx löschen, damit sie nicht in diesem Request mitgeschickt werden
-	c.ctx = WithHeaders(c.ctx, http.Header{})
 
 	data = url.Values{}
 	data.Set("client_id", c.creds.ClientID)
@@ -231,19 +279,26 @@ func (c *Communication) getAccessTokens() (string, error) {
 	data.Set("grant_type", "cd_secondary")
 	data.Set("token", token.AccessToken)
 
-	response, err = c.client.PostForm(c.ctx, c.config.OAuthURL, data, &token)
-	if err != nil {
-		return "", err
+	{
+		ctx5, cancel := context.WithTimeout(c.sessionCtx, 5*time.Second)
+		defer cancel()
+
+		response, err = c.client.PostForm(ctx5, c.config.OAuthURL, data, &token)
+		if err != nil {
+			return err
+		}
 	}
 
+	c.mu.Lock()
 	c.accessToken = token.AccessToken
 	c.refreshToken = token.RefreshToken
+	c.mu.Unlock()
 
 	fmt.Println("Session-TAN activated successfully.")
 	fmt.Println("Scope:", token.Scope)
 	fmt.Printf("Token expires in %d seconds\n", token.ExpiresIn)
 
-	return response.Status, nil
+	return nil
 }
 
 func loadConfig(path string, out interface{}) error {
@@ -263,16 +318,22 @@ func loadConfig(path string, out interface{}) error {
 
 // startTimer starts a periodic timer that calls the specified function at the given interval
 func (c *Communication) startTimer(interval time.Duration, callback func()) error {
+	c.mu.Lock()
 	if c.isTimerActive {
+		c.mu.Unlock()
 		return fmt.Errorf("timer is already active")
 	}
+	c.isTimerActive = true
+	c.stopChan = make(chan struct{})
+	c.mu.Unlock()
 
 	c.ticker = time.NewTicker(interval)
-	c.isTimerActive = true
 
 	go func() {
 		defer func() {
+			c.mu.Lock()
 			c.isTimerActive = false
+			c.mu.Unlock()
 		}()
 
 		for {
@@ -293,9 +354,12 @@ func (c *Communication) startTimer(interval time.Duration, callback func()) erro
 
 // stopTimer stops the periodic timer
 func (c *Communication) stopTimer() {
+	c.mu.RLock()
 	if !c.isTimerActive {
+		c.mu.RUnlock()
 		return
 	}
+	c.mu.RUnlock()
 
 	if c.ticker != nil {
 		c.ticker.Stop()
@@ -305,23 +369,28 @@ func (c *Communication) stopTimer() {
 	close(c.stopChan)
 
 	// Recreate the stop channel for potential future use
-	c.stopChan = make(chan struct{})
+	//c.stopChan = make(chan struct{})
 
+	c.mu.Lock()
 	c.isTimerActive = false
+	c.mu.Unlock()
 	fmt.Println("Timer stopped")
 }
 
 func (c *Communication) refreshAccessToken() error {
 
+	ctx, cancel := context.WithTimeout(c.sessionCtx, 5*time.Second)
+	defer cancel()
+
 	data := url.Values{}
 	data.Set("client_id", c.creds.ClientID)
 	data.Set("client_secret", c.creds.ClientSecret)
 	data.Set("grant_type", "refresh_token")
-	data.Set("refresh_token", c.refreshToken)
+	data.Set("refresh_token", c.accessRefreshTokenSnapshot())
 
 	var token ResponseOAuth2Flow
 
-	response, err := c.client.PostForm(c.ctx, c.config.OAuthURL, data, &token)
+	response, err := c.client.PostForm(ctx, c.config.OAuthURL, data, &token)
 	if err != nil {
 		return err
 	}
@@ -330,8 +399,10 @@ func (c *Communication) refreshAccessToken() error {
 		return fmt.Errorf("failed to refresh access token, status code: %d", response.StatusCode)
 	}
 
+	c.mu.Lock()
 	c.accessToken = token.AccessToken
 	c.refreshToken = token.RefreshToken
+	c.mu.Unlock()
 
 	fmt.Printf("Token expires in %d seconds\n", token.ExpiresIn)
 
@@ -339,21 +410,35 @@ func (c *Communication) refreshAccessToken() error {
 }
 
 func (c *Communication) revokeToken() error {
+	ctx, cancel := context.WithTimeout(c.sessionCtx, 5*time.Second)
+	defer cancel()
 
-	data := url.Values{}
-	data.Set("client_id", c.creds.ClientID)
-	data.Set("client_secret", c.creds.ClientSecret)
-	data.Set("token", c.accessToken)
+	reqHdr := http.Header{}
+	reqHdr.Set("Content-Type", "application/x-www-form-urlencoded")
+	reqHdr.Set("Authorization", "Bearer "+c.accessTokenSnapshot())
+	ctx = WithHeaders(ctx, reqHdr)
 
-	response, err := c.client.PostForm(c.ctx, c.config.OAuthURL+"/revoke", data, nil)
+	response, err := c.client.Delete(ctx, c.config.OAuthURL+"/revoke")
 	if err != nil {
 		return err
 	}
 
-	if response.StatusCode != 200 {
+	if response.StatusCode != 204 {
 		return fmt.Errorf("failed to revoke token, status code: %d", response.StatusCode)
 	}
 
 	fmt.Println("Access token revoked successfully.")
 	return nil
+}
+
+func (c *Communication) accessTokenSnapshot() string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.accessToken
+}
+
+func (c *Communication) accessRefreshTokenSnapshot() string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.refreshToken
 }

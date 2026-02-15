@@ -14,8 +14,10 @@ import (
 )
 
 type Config struct {
-	URL      string `json:"url"`
-	OAuthURL string `json:"oauthUrl"`
+	URL               string `json:"url"`
+	OAuthURL          string `json:"oauthUrl"`
+	UserAccountsURL   string `json:"userAccountsUrl"`
+	AccountBalanceURL string `json:"accountBalanceUrl"`
 }
 
 type Communication struct {
@@ -24,6 +26,7 @@ type Communication struct {
 	mu            sync.RWMutex
 	accessToken   string
 	refreshToken  string
+	infoHeader    string // value for x-http-request-info header.
 	ticker        *time.Ticker
 	stopChan      chan struct{}
 	isTimerActive bool
@@ -94,6 +97,32 @@ func (c *Communication) EndSession() error {
 	return nil
 }
 
+func (c *Communication) GetAccountBalances() ([]AccountBalance, error) {
+	var accountBalances AccountBalancesResponse
+
+	reqHdr := http.Header{}
+	reqHdr.Set("Authorization", "Bearer "+c.accessTokenSnapshot())
+	reqHdr.Set("x-http-request-info", c.infoHeader)
+	reqHdr.Set("Content-Type", "application/json")
+
+	ctx, cancel := context.WithTimeout(c.sessionCtx, 5*time.Second)
+	defer cancel()
+
+	ctx = WithHeaders(ctx, reqHdr)
+
+	url := c.config.URL + c.config.UserAccountsURL
+	response, err := c.client.GetJSON(ctx, url, &accountBalances)
+	if err != nil {
+		return nil, err
+	}
+
+	if response.StatusCode != 200 {
+		return nil, fmt.Errorf("failed to get account balance, status code: %d", response.StatusCode)
+	}
+
+	return accountBalances.Values, nil
+}
+
 // RefreshTokenPeriodically starts a timer that periodically refreshes the access token
 func (c *Communication) RefreshTokenPeriodically(interval time.Duration) error {
 	return c.startTimer(interval, func() {
@@ -155,7 +184,7 @@ func (c *Communication) getAccessTokens() error {
 	requestId := timestampStr[len(timestampStr)-9:]
 
 	//{"clientRequestId":{"sessionId":"{{session_id}}","requestId":"{{request_id}}"}}
-	infoValue := fmt.Sprintf("{\"clientRequestId\":{\"sessionId\":\"%s\",\"requestId\":\"%s\"}}", sessionId, requestId)
+	c.infoHeader = fmt.Sprintf("{\"clientRequestId\":{\"sessionId\":\"%s\",\"requestId\":\"%s\"}}", sessionId, requestId)
 
 	var sessionObjs []SessionObject
 
@@ -163,7 +192,7 @@ func (c *Communication) getAccessTokens() error {
 	reqHdr := http.Header{}
 	reqHdr.Set("Content-Type", "application/json")
 	reqHdr.Set("Authorization", "Bearer "+token.AccessToken)
-	reqHdr.Set("x-http-request-info", infoValue)
+	reqHdr.Set("x-http-request-info", c.infoHeader)
 
 	{
 		ctx2, cancel := context.WithTimeout(c.sessionCtx, 5*time.Second)
@@ -366,6 +395,7 @@ func (c *Communication) stopTimer() {
 	}
 
 	// Signal the goroutine to stop
+
 	close(c.stopChan)
 
 	// Recreate the stop channel for potential future use

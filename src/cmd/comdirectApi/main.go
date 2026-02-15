@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"time"
 
 	"github.com/fritzrepo/stockportfolio/internal/banking/comdirect"
 )
@@ -28,8 +27,20 @@ func main() {
 
 	fmt.Println("Session started successfully.")
 
-	fmt.Println("Starting periodic refresh of access token every 2 minutes...")
-	comm.RefreshTokenPeriodically(2 * time.Minute)
+	// fmt.Println("Starting periodic refresh of access token every 2 minutes...")
+	// comm.RefreshTokenPeriodically(2 * time.Minute)
+
+	fmt.Println("Press Enter to fetching account balances...")
+	fmt.Scanln()
+	accountBalances, err := comm.GetAccountBalances()
+	if err != nil {
+		log.Println("Error fetching account balances:", err)
+		return
+	}
+
+	for _, balance := range accountBalances {
+		fmt.Printf("Account ID: %s, Balance: %s %s\n", balance.Account.AccountType.Text, balance.Balance.Value, balance.Balance.Unit)
+	}
 
 	fmt.Println("\nPress Enter to exit to  the app...")
 	fmt.Scanln()

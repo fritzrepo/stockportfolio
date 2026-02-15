@@ -1,5 +1,7 @@
 {
     "_url": "http://172.17.0.1:3000/todos",
     "url": "https://api.comdirect.de/api",
-    "oauthUrl": "https://api.comdirect.de/oauth/token"
+    "oauthUrl": "https://api.comdirect.de/oauth/token",
+    "userAccountsUrl": "/banking/clients/user/v2/accounts/balances",
+    "accountBalanceUrl": "/banking/v2/accounts/{{accountUUID}}/balances"
 }

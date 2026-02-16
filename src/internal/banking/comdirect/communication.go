@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -121,6 +122,32 @@ func (c *Communication) GetAccountBalances() ([]AccountBalance, error) {
 	}
 
 	return accountBalances.Values, nil
+}
+
+func (c *Communication) GetAccoutBalance(accountId string) (AccountBalance, error) {
+	var accountBalance AccountBalance
+
+	reqHdr := http.Header{}
+	reqHdr.Set("Authorization", "Bearer "+c.accessTokenSnapshot())
+	reqHdr.Set("x-http-request-info", c.infoHeader)
+	reqHdr.Set("Content-Type", "application/json")
+
+	ctx, cancel := context.WithTimeout(c.sessionCtx, 5*time.Second)
+	defer cancel()
+
+	ctx = WithHeaders(ctx, reqHdr)
+	fullURL := c.config.URL + strings.ReplaceAll(c.config.AccountBalanceURL, "{{accountUUID}}", accountId)
+
+	response, err := c.client.GetJSON(ctx, fullURL, &accountBalance)
+	if err != nil {
+		return AccountBalance{}, err
+	}
+
+	if response.StatusCode != 200 {
+		return AccountBalance{}, fmt.Errorf("failed to get account balance for account %s, status code: %d", accountId, response.StatusCode)
+	}
+
+	return accountBalance, nil
 }
 
 // RefreshTokenPeriodically starts a timer that periodically refreshes the access token

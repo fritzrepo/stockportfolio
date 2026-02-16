@@ -9,4 +9,5 @@ type Banking interface {
 	EndSession() error
 	RefreshTokenPeriodically(interval time.Duration) error
 	GetAccountBalances() ([]Account, error)
+	GetAccoutBalance(accountId string) (Account, error)
 }

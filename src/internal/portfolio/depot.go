@@ -77,9 +77,6 @@ func (d *Depot) GetPerformance() (Performance, error) {
 
 	for _, gain := range realizedGains {
 		result.TotalGains += gain.Amount
-	}
-
-	for _, gain := range realizedGains {
 		result.TotalInvestedAmount += gain.BuyPrice * gain.Quantity
 	}
 

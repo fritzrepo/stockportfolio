@@ -40,7 +40,7 @@ func ReadRealizedGainsCsv(fileName string, depotName string) []storage.Transacti
 		}
 		newTransaction.TransactionType = "buy"
 		newTransaction.AssetType = record[1]
-		newTransaction.TickerSymbol = ""
+		newTransaction.TickerSymbol = "csvImported" // Da in der CSV kein TickerSymbol vorhanden ist, setze ich hier einen Platzhalter
 		newTransaction.Quantity, _ = strconv.ParseFloat(record[2], 64)
 		str := record[3]
 		str = strings.ReplaceAll(str, ".", "")  // Punkte entfernen
@@ -69,7 +69,7 @@ func ReadRealizedGainsCsv(fileName string, depotName string) []storage.Transacti
 		}
 		newTransaction.TransactionType = "sell"
 		newTransaction.AssetType = record[1]
-		newTransaction.TickerSymbol = ""
+		newTransaction.TickerSymbol = "csvImported" // Da in der CSV kein TickerSymbol vorhanden ist, setze ich hier einen Platzhalter
 		newTransaction.Quantity, _ = strconv.ParseFloat(record[2], 64)
 		str2 := record[4]
 		str2 = strings.ReplaceAll(str2, ".", "")  // Punkte entfernen

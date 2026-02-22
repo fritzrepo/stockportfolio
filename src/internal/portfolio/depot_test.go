@@ -31,9 +31,10 @@ func setupTestStore(t *testing.T) storage.Store {
 func TestComputeTransactions(t *testing.T) {
 
 	type TestCases = []struct {
-		Name          string                 `json:"name"`
-		ExpectedGains []storage.RealizedGain `json:"expectedGains"`
-		ExpectedDepot map[string]DepotEntry  `json:"expectedDepot"`
+		Name                string                 `json:"name"`
+		ExpectedGains       []storage.RealizedGain `json:"expectedGains"`
+		ExpectedDepot       map[string]DepotEntry  `json:"expectedDepot"`
+		ExpectedPerformance Performance            `json:"expectedPerformance"`
 	}
 
 	testcount := 7
@@ -54,6 +55,13 @@ func TestComputeTransactions(t *testing.T) {
 		}
 		defer jsonFileGains.Close()
 
+		filenamePerformance := fmt.Sprintf("../../testdata/depot/expectedPerformance%d.json", i+1)
+		jsonFilePerformance, err := os.Open(filenamePerformance)
+		if err != nil {
+			t.Fatalf("Failed to open test data: %v", err)
+		}
+		defer jsonFilePerformance.Close()
+
 		testCases[i].Name = fmt.Sprintf("Test%d", i+1)
 
 		byteValueDepot, _ := io.ReadAll(jsonFileDepot)
@@ -63,6 +71,11 @@ func TestComputeTransactions(t *testing.T) {
 
 		byteValueGains, _ := io.ReadAll(jsonFileGains)
 		if err := json.Unmarshal(byteValueGains, &testCases[i].ExpectedGains); err != nil {
+			t.Fatalf("Failed to unmarshal test data: %v", err)
+		}
+
+		byteValuePerformance, _ := io.ReadAll(jsonFilePerformance)
+		if err := json.Unmarshal(byteValuePerformance, &testCases[i].ExpectedPerformance); err != nil {
 			t.Fatalf("Failed to unmarshal test data: %v", err)
 		}
 	}
@@ -128,6 +141,19 @@ func TestComputeTransactions(t *testing.T) {
 					matchedGain.Currency != expectedEntry.Currency {
 					t.Errorf("Realized gain for asset %s does not match expected values. Expected: %+v, Got: %+v", expectedEntry.Asset, expectedEntry, matchedGain)
 				}
+			}
+
+			//Check the performance
+			performance, err := dep.GetPerformance()
+			if err != nil {
+				t.Fatalf("Error getting performance: %v", err)
+			}
+
+			const epsilon = 1e-3
+			if performance.CountOfRealizedGains != tt.ExpectedPerformance.CountOfRealizedGains ||
+				math.Abs(performance.TotalGains-tt.ExpectedPerformance.TotalGains) > epsilon ||
+				math.Abs(performance.TotalInvestedAmount-tt.ExpectedPerformance.TotalInvestedAmount) > epsilon {
+				t.Errorf("Performance does not match expected values. Expected: %+v, Got: %+v", tt.ExpectedPerformance, performance)
 			}
 		})
 	}

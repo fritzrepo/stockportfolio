@@ -38,3 +38,23 @@ In Request Header "x-once-authentication-info" die Challenge-ID eintragen.
 Access-Token ist 10 Minuten gültig und kann vor Ablauf mit dem refresh-token erneuert werden.
 
 Fehlermeldungen sind im Header-Feld „x-http-response-info“ untergebracht.
+
+
+transactionType         Übersetzung
+Sparplan                Saving Plan
+Wertpapier              Securities
+Geldanlage              Investment Saving
+Bankgebühren            Bank fees
+Sonstiges               Miscellaneous
+Bar                     Cash
+Zinsen / Dividenden     Interest / Dividends
+Devisen                 Currency Exchange
+Storno                  Cancellation
+Scheck                  Cheque
+Lastschrift             Direct Debit
+Überweisung             Transfer
+Kartenverfügung         Card transaction
+Sorten (Kasse)          Foreign Currency exchange
+Geldautomat             ATM Withdrawal
+Geldanlage              Savings
+Dauerauftrag            Standing Order

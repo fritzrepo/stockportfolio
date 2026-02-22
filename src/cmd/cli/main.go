@@ -127,7 +127,7 @@ func main() {
 		fmt.Print("Enter depot name for this transactions: ")
 		fmt.Scan(&depotName)
 
-		transactions := imports.ReadRealizedGainsCsv("../../../Investbilanz_Alex_und_Ingo.csv", depotName)
+		transactions := imports.ReadRealizedGainsCsv("../../data/transactions.csv", depotName)
 
 		store := storage.GetFileDatabase(config.DatabaseFilePath)
 		depot := portfolio.GetDepot(store)

@@ -58,3 +58,17 @@ type AccountTransactionsResponse struct {
 	// Aggregated, not implemented yet
 	Values []AccountTransaction `json:"values"`
 }
+
+type Depot struct {
+	DepotId                    string `json:"depotId"`
+	DepotDisplayId             string `json:"depotDisplayId"`
+	ClientId                   string `json:"clientId"`
+	DepotType                  string `json:"depotType"`
+	DefaultSettlementAccountId string `json:"defaultSettlementAccountId"`
+	TargetMarket               string `json:"targetMarket"`
+}
+
+type DepotsResponse struct {
+	Paging Paging  `json:"paging"`
+	Values []Depot `json:"values"`
+}

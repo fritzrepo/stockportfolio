@@ -20,6 +20,9 @@ type Config struct {
 	UserAccountsURL        string `json:"userAccountsUrl"`
 	AccountBalanceURL      string `json:"accountBalanceUrl"`
 	AccountTransactionsURL string `json:"accountTransactionsUrl"`
+	DepotsURL              string `json:"depotsUrl"`
+	DepotPositionsURL      string `json:"depotPositionsUrl"`
+	DepotTransactionsURL   string `json:"depotTransactionsUrl"`
 }
 
 type Communication struct {
@@ -175,6 +178,32 @@ func (c *Communication) GetLastAccountTransactions(accountId string) ([]AccountT
 	}
 
 	return accountTransactions.Values, nil
+}
+
+func (c *Communication) GetDepots() ([]Depot, error) {
+	var depotsResponse DepotsResponse
+
+	reqHdr := http.Header{}
+	reqHdr.Set("Authorization", "Bearer "+c.accessTokenSnapshot())
+	reqHdr.Set("x-http-request-info", c.infoHeader)
+	reqHdr.Set("Content-Type", "application/json")
+
+	ctx, cancel := context.WithTimeout(c.sessionCtx, 5*time.Second)
+	defer cancel()
+
+	ctx = WithHeaders(ctx, reqHdr)
+	fullURL := c.config.URL + c.config.DepotsURL
+
+	response, err := c.client.GetJSON(ctx, fullURL, &depotsResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	if response.StatusCode != 200 {
+		return nil, fmt.Errorf("failed to get depots, status code: %d", response.StatusCode)
+	}
+
+	return depotsResponse.Values, nil
 }
 
 // RefreshTokenPeriodically starts a timer that periodically refreshes the access token

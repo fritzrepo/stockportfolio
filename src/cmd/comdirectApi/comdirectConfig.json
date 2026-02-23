@@ -4,5 +4,8 @@
     "oauthUrl": "https://api.comdirect.de/oauth/token",
     "userAccountsUrl": "/banking/clients/user/v2/accounts/balances",
     "accountBalanceUrl": "/banking/v2/accounts/{{accountUUID}}/balances",
-    "accountTransactionsUrl": "/banking/v1/accounts/{{accountUUID}}/transactions"
+    "accountTransactionsUrl": "/banking/v1/accounts/{{accountUUID}}/transactions",
+    "depotsUrl": "/brokerage/clients/user/v3/depots",
+    "depotPositionsUrl": "/brokerage/v3/depots/{{depotUUID}}/positions",
+    "depotTransactionsUrl": "/brokerage/v3/depots/{{depotUUID}}/transactions"
 }

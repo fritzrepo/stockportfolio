@@ -69,6 +69,21 @@ func main() {
 		fmt.Printf("Reference ID: %s, Amount: %s %s, Booking Date: %s, Infotext: %s\n", transaction.Reference, transaction.Amount.Value, transaction.Amount.Unit, transaction.BookingDate, transaction.RemittanceInfo)
 	}
 
+	//Load depots
+	fmt.Println("Press Enter to fetching depots...")
+	fmt.Scanln()
+	depots, err := comm.GetDepots()
+	if err != nil {
+		log.Println("Error fetching depots:", err)
+		return
+	}
+
+	for _, depot := range depots {
+		fmt.Printf("Depot ID: %s, Depot type: %s\n", depot.DepotId, depot.DepotType)
+	}
+
+	//var depotId = depots[0].DepotId
+
 	// Exit application
 	fmt.Println("\nPress Enter to exit to  the app...")
 	fmt.Scanln()

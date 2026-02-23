@@ -1,5 +1,5 @@
-## Comdirect API
-#### Anmeldevorgang
+# Comdirect API
+## Anmeldevorgang
 2.1 Access token holen:<br>
 Credentials nicht als json, sondern als form-url-encoded senden.
 Session_id und request_id erzeugen. Wird in die headers des nächsten Requests eingetragen.
@@ -40,21 +40,30 @@ Access-Token ist 10 Minuten gültig und kann vor Ablauf mit dem refresh-token er
 Fehlermeldungen sind im Header-Feld „x-http-response-info“ untergebracht.
 
 
-transactionType         Übersetzung
-Sparplan                Saving Plan
-Wertpapier              Securities
-Geldanlage              Investment Saving
-Bankgebühren            Bank fees
-Sonstiges               Miscellaneous
-Bar                     Cash
-Zinsen / Dividenden     Interest / Dividends
-Devisen                 Currency Exchange
-Storno                  Cancellation
-Scheck                  Cheque
-Lastschrift             Direct Debit
-Überweisung             Transfer
-Kartenverfügung         Card transaction
-Sorten (Kasse)          Foreign Currency exchange
-Geldautomat             ATM Withdrawal
-Geldanlage              Savings
-Dauerauftrag            Standing Order
+| transactionType | Übersetzung |
+|---|---|
+| Sparplan | Saving Plan |
+| Wertpapier | Securities |
+| Geldanlage | Investment Saving |
+| Bankgebühren | Bank fees |
+| Sonstiges | Miscellaneous |
+| Bar | Cash |
+| Zinsen / Dividenden | Interest / Dividends |
+| Devisen | Currency Exchange |
+| Storno | Cancellation |
+| Scheck | Cheque |
+| Lastschrift | Direct Debit |
+| Überweisung | Transfer |
+| Kartenverfügung | Card transaction |
+| Sorten (Kasse) | Foreign Currency exchange |
+| Geldautomat | ATM Withdrawal |
+| Geldanlage | Savings |
+| Dauerauftrag | Standing Order |
+
+
+## Implementierte Requests
+- Anmelden bzw. Ssssion Token verwalten
+- Session schließen
+- Alle Konten laden
+- Einzelnes Konto laden
+- 

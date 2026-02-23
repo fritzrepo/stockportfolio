@@ -6,8 +6,7 @@ type ValueUnit struct {
 	Unit  string `json:"unit"`
 }
 
-// AccountType represents the type of an account.
-type AccountType struct {
+type KeyTextType struct {
 	Key  string `json:"key"`
 	Text string `json:"text"`
 }
@@ -18,7 +17,7 @@ type Account struct {
 	AccountDisplayId string      `json:"accountDisplayId"`
 	Currency         string      `json:"currency"`
 	ClientId         string      `json:"clientId"`
-	AccountType      AccountType `json:"accountType"`
+	AccountType      KeyTextType `json:"accountType"`
 	IBAN             string      `json:"iban"`
 	BIC              string      `json:"bic"`
 	CreditLimit      ValueUnit   `json:"creditLimit"`
@@ -42,4 +41,20 @@ type Paging struct {
 type AccountBalancesResponse struct {
 	Paging Paging           `json:"paging"`
 	Values []AccountBalance `json:"values"`
+}
+
+type AccountTransaction struct {
+	Reference       string      `json:"reference"`
+	BookingStatus   string      `json:"bookingStatus"`
+	BookingDate     string      `json:"bookingDate"`
+	ValutaDate      string      `json:"valueDate"`
+	Amount          ValueUnit   `json:"amount"`
+	RemittanceInfo  string      `json:"remittanceInfo"`
+	TransactionType KeyTextType `json:"transactionType"`
+}
+
+type AccountTransactionsResponse struct {
+	Paging Paging `json:"paging"`
+	// Aggregated, not implemented yet
+	Values []AccountTransaction `json:"values"`
 }

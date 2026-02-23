@@ -15,10 +15,11 @@ import (
 )
 
 type Config struct {
-	URL               string `json:"url"`
-	OAuthURL          string `json:"oauthUrl"`
-	UserAccountsURL   string `json:"userAccountsUrl"`
-	AccountBalanceURL string `json:"accountBalanceUrl"`
+	URL                    string `json:"url"`
+	OAuthURL               string `json:"oauthUrl"`
+	UserAccountsURL        string `json:"userAccountsUrl"`
+	AccountBalanceURL      string `json:"accountBalanceUrl"`
+	AccountTransactionsURL string `json:"accountTransactionsUrl"`
 }
 
 type Communication struct {
@@ -148,6 +149,32 @@ func (c *Communication) GetAccoutBalance(accountId string) (AccountBalance, erro
 	}
 
 	return accountBalance, nil
+}
+
+func (c *Communication) GetLastAccountTransactions(accountId string) ([]AccountTransaction, error) {
+	var accountTransactions AccountTransactionsResponse
+
+	reqHdr := http.Header{}
+	reqHdr.Set("Authorization", "Bearer "+c.accessTokenSnapshot())
+	reqHdr.Set("x-http-request-info", c.infoHeader)
+	reqHdr.Set("Content-Type", "application/json")
+
+	ctx, cancel := context.WithTimeout(c.sessionCtx, 5*time.Second)
+	defer cancel()
+
+	ctx = WithHeaders(ctx, reqHdr)
+	fullURL := c.config.URL + strings.ReplaceAll(c.config.AccountTransactionsURL, "{{accountUUID}}", accountId)
+
+	response, err := c.client.GetJSON(ctx, fullURL, &accountTransactions)
+	if err != nil {
+		return nil, err
+	}
+
+	if response.StatusCode != 200 {
+		return nil, fmt.Errorf("failed to get account transactions for account %s, status code: %d", accountId, response.StatusCode)
+	}
+
+	return accountTransactions.Values, nil
 }
 
 // RefreshTokenPeriodically starts a timer that periodically refreshes the access token

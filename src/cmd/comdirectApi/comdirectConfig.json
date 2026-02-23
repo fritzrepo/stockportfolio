@@ -3,5 +3,6 @@
     "url": "https://api.comdirect.de/api",
     "oauthUrl": "https://api.comdirect.de/oauth/token",
     "userAccountsUrl": "/banking/clients/user/v2/accounts/balances",
-    "accountBalanceUrl": "/banking/v2/accounts/{{accountUUID}}/balances"
+    "accountBalanceUrl": "/banking/v2/accounts/{{accountUUID}}/balances",
+    "accountTransactionsUrl": "/banking/v1/accounts/{{accountUUID}}/transactions"
 }

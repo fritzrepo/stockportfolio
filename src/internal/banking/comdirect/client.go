@@ -83,28 +83,6 @@ func NewClient(timeout time.Duration) (*Client, error) {
 // Do führt ein *http.Request aus und liefert den Body (schließt response.Body).
 func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, []byte, error) {
 
-	// 1) inject headers from context (per-request). These have lower priority than explicit req headers.
-	// if hdrs := headersFromCtx(req.Context()); hdrs != nil {
-	// 	for k, vals := range hdrs {
-	// 		if req.Header.Get(k) == "" {
-	// 			for _, v := range vals {
-	// 				req.Header.Add(k, v)
-	// 			}
-	// 		}
-	// 	}
-	// }
-
-	// 2) apply client default headers for any header not already set on the request
-	// if c != nil && c.defaultHeader != nil {
-	// 	for k, vals := range c.defaultHeader {
-	// 		if req.Header.Get(k) == "" {
-	// 			for _, v := range vals {
-	// 				req.Header.Add(k, v)
-	// 			}
-	// 		}
-	// 	}
-	// }
-
 	mergeHeaders(req.Header, headersFromCtx(req.Context()))
 	mergeHeaders(req.Header, c.defaultHeader)
 

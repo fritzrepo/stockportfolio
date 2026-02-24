@@ -82,7 +82,23 @@ func main() {
 		fmt.Printf("Depot ID: %s, Depot type: %s\n", depot.DepotId, depot.DepotType)
 	}
 
-	//var depotId = depots[0].DepotId
+	var depotId = depots[0].DepotId
+
+	// Fetch depot details
+	fmt.Printf("Press Enter to fetching details for depot ID: %s...\n", depotId)
+	fmt.Scanln()
+	depotDetailsResponse, err := comm.GetDepotPositions(depotId)
+	if err != nil {
+		log.Println("Error fetching depot details:", err)
+		return
+	}
+	depotDetails := depotDetailsResponse.Values
+	aggregated := depotDetailsResponse.Aggregated
+	fmt.Printf("Current value: %s,  Profit/Loss: %s\n", aggregated.CurrentValue.Value, aggregated.ProfitLossPurchaseAbs)
+
+	for _, position := range depotDetails {
+		fmt.Printf("Position ID: %s, WKN: %s, Quantity: %s\n", position.PositionId, position.Wkn, position.Quantity.Value)
+	}
 
 	// Exit application
 	fmt.Println("\nPress Enter to exit to  the app...")

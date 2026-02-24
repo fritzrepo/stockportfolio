@@ -9,8 +9,7 @@
 			"extensions": [
 				"humao.rest-client",
 				"github.vscode-github-actions",
-				"yy0931.vscode-sqlite3-editor",
-				"ms-azuretools.vscode-containers"
+				"yy0931.vscode-sqlite3-editor"
 			]
 		}
 	}

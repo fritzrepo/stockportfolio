@@ -66,4 +66,7 @@ Fehlermeldungen sind im Header-Feld „x-http-response-info“ untergebracht.
 - Session schließen
 - Alle Konten laden
 - Einzelnes Konto laden
-- 
+- Letzte Umsätze laden
+- Alle Depots laden (nötig für die DepotId, die für die anderen Depotabfragen benötigt wird.)
+- Depot-Positionen laden
+- Einzelne Position laden? Macht das Sinn?

@@ -72,3 +72,41 @@ type DepotsResponse struct {
 	Paging Paging  `json:"paging"`
 	Values []Depot `json:"values"`
 }
+
+type DepotAggregated struct {
+	Depot                 Depot     `json:"depot"`
+	PrevDayValue          ValueUnit `json:"prevDayValue"`
+	CurrentValue          ValueUnit `json:"currentValue"`
+	PurchaseValue         ValueUnit `json:"purchaseValue"`
+	ProfitLossPurchaseAbs ValueUnit `json:"profitLossPurchaseAbs"`
+	ProfitLossPurchaseRel string    `json:"profitLossPurchaseRel"`
+	ProfitLossPrevDayAbs  ValueUnit `json:"profitLossPrevDayAbs"`
+	ProfitLossPrevDayRel  string    `json:"profitLossPrevDayRel"`
+}
+
+type Venue struct {
+	VenueId string `json:"venueId"`
+	Name    string `json:"name"`
+	Country string `json:"country"`
+	Type    string `json:"type"`
+}
+
+type CurrentPrice struct {
+	Price         ValueUnit `json:"price"`
+	PriceDateTime FlexTime  `json:"priceDateTime"`
+	Venue         Venue     `json:"venue"`
+}
+
+type DepotPosition struct {
+	PositionId   string       `json:"positionId"`
+	DepotId      string       `json:"depotId"`
+	Wkn          string       `json:"wkn"`
+	Quantity     ValueUnit    `json:"quantity"`
+	CurrentPrice CurrentPrice `json:"currentPrice"`
+}
+
+type DepotPositionsResponse struct {
+	Paging     Paging          `json:"paging"`
+	Aggregated DepotAggregated `json:"aggregated"`
+	Values     []DepotPosition `json:"values"`
+}

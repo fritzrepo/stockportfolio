@@ -110,6 +110,19 @@ func main() {
 	}
 	fmt.Printf("Position ID: %s, WKN: %s, Quantity: %s, Current Price: %s\n", positionDetails.PositionId, positionDetails.Wkn, positionDetails.Quantity.Value, positionDetails.CurrentPrice.Price.Value)
 
+	// Fetch depot transactions
+	fmt.Printf("Press Enter to fetching transactions for depot ID: %s...\n", depotId)
+	fmt.Scanln()
+	depotTransactions, err := comm.GetDepotTransactions(depotId)
+	if err != nil {
+		log.Println("Error fetching depot transactions:", err)
+		return
+	}
+
+	for _, transaction := range depotTransactions {
+		fmt.Printf("Transaction ID: %s, WKN: %s, Quantity: %s, Booking Date: %s\n", transaction.TransactionId, transaction.Instrument.Wkn, transaction.Quantity.Value, transaction.BookingDate)
+	}
+
 	// Exit application
 	fmt.Println("\nPress Enter to exit to  the app...")
 	fmt.Scanln()

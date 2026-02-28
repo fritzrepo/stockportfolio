@@ -258,6 +258,32 @@ func (c *Communication) GetDepotPosition(depotId string, position string) (Depot
 	return depotPosition, nil
 }
 
+func (c *Communication) GetDepotTransactions(depotId string) ([]DepotTransaction, error) {
+	var depotTransactionsResponse DepotTransactionsResponse
+
+	reqHdr := http.Header{}
+	reqHdr.Set("Authorization", "Bearer "+c.accessTokenSnapshot())
+	reqHdr.Set("x-http-request-info", c.infoHeader)
+	reqHdr.Set("Content-Type", "application/json")
+
+	ctx, cancel := context.WithTimeout(c.sessionCtx, 5*time.Second)
+	defer cancel()
+
+	ctx = WithHeaders(ctx, reqHdr)
+	fullURL := c.config.URL + strings.ReplaceAll(c.config.DepotTransactionsURL, "{{depotUUID}}", depotId)
+
+	response, err := c.client.GetJSON(ctx, fullURL, &depotTransactionsResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	if response.StatusCode != 200 {
+		return nil, fmt.Errorf("failed to get depot transactions for depot %s, status code: %d", depotId, response.StatusCode)
+	}
+
+	return depotTransactionsResponse.Values, nil
+}
+
 // RefreshTokenPeriodically starts a timer that periodically refreshes the access token
 func (c *Communication) RefreshTokenPeriodically(interval time.Duration) error {
 	return c.startTimer(interval, func() {

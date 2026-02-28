@@ -110,3 +110,32 @@ type DepotPositionsResponse struct {
 	Aggregated DepotAggregated `json:"aggregated"`
 	Values     []DepotPosition `json:"values"`
 }
+
+type StaticData struct {
+	InstrumentType     string `json:"instrumentType"`
+	SettlementCurrency string `json:"settlementCurrency"`
+}
+
+type Instrument struct {
+	Wkn        string     `json:"wkn"`
+	Isin       string     `json:"isin"`
+	Name       string     `json:"name"`
+	StaticData StaticData `json:"staticData"`
+}
+
+type DepotTransaction struct {
+	TransactionId    string     `json:"transactionId"`
+	BookingStatus    string     `json:"bookingStatus"`
+	BookingDate      string     `json:"bookingDate"`
+	BusinessDate     string     `json:"businessDate"`
+	Quantity         ValueUnit  `json:"quantity"`
+	Instrument       Instrument `json:"instrument"`
+	ExecutionPrice   ValueUnit  `json:"executionPrice"`
+	TransactionValue ValueUnit  `json:"transactionValue"`
+	TransactionType  string     `json:"transactionType"`
+}
+
+type DepotTransactionsResponse struct {
+	Paging Paging             `json:"paging"`
+	Values []DepotTransaction `json:"values"`
+}

@@ -100,6 +100,16 @@ func main() {
 		fmt.Printf("Position ID: %s, WKN: %s, Quantity: %s\n", position.PositionId, position.Wkn, position.Quantity.Value)
 	}
 
+	// Fetch the first depot position
+	fmt.Printf("Press Enter to fetching details for position ID: %s...\n", depotDetails[0].PositionId)
+	fmt.Scanln()
+	positionDetails, err := comm.GetDepotPosition(depotId, depotDetails[0].PositionId)
+	if err != nil {
+		log.Println("Error fetching position details:", err)
+		return
+	}
+	fmt.Printf("Position ID: %s, WKN: %s, Quantity: %s, Current Price: %s\n", positionDetails.PositionId, positionDetails.Wkn, positionDetails.Quantity.Value, positionDetails.CurrentPrice.Price.Value)
+
 	// Exit application
 	fmt.Println("\nPress Enter to exit to  the app...")
 	fmt.Scanln()

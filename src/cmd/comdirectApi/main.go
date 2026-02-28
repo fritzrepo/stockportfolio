@@ -123,6 +123,18 @@ func main() {
 		fmt.Printf("Transaction ID: %s, WKN: %s, Quantity: %s, Booking Date: %s\n", transaction.TransactionId, transaction.Instrument.Wkn, transaction.Quantity.Value, transaction.BookingDate)
 	}
 
+	// Fetch instrument details for TRAT0N
+	fmt.Printf("Press Enter to fetching details for instrument with WKN: %s...\n", "TRAT0N")
+	fmt.Scanln()
+	instrumentDetails, err := comm.GetInstrumentDetails("TRAT0N")
+	if err != nil {
+		log.Println("Error fetching instrument details:", err)
+		return
+	}
+	for _, instrument := range instrumentDetails {
+		fmt.Printf("WKN: %s, ISIN: %s, Name: %s\n", instrument.Wkn, instrument.Isin, instrument.Name)
+	}
+
 	// Exit application
 	fmt.Println("\nPress Enter to exit to  the app...")
 	fmt.Scanln()

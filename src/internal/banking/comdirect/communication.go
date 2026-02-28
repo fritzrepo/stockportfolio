@@ -23,6 +23,7 @@ type Config struct {
 	DepotsURL              string `json:"depotsUrl"`
 	DepotPositionsURL      string `json:"depotPositionsUrl"`
 	DepotTransactionsURL   string `json:"depotTransactionsUrl"`
+	InstrumentsURL         string `json:"instrumentsUrl"`
 }
 
 type Communication struct {
@@ -282,6 +283,35 @@ func (c *Communication) GetDepotTransactions(depotId string) ([]DepotTransaction
 	}
 
 	return depotTransactionsResponse.Values, nil
+}
+
+// GetInstrumentDetails retrieves the details of a financial instrument based on its WKN
+// Das Response Model ist abhängig vom Wertpapier und daher nicht immer gleich.
+// Ob das dem REST-Patern entspricht, ist fraglich.
+func (c *Communication) GetInstrumentDetails(wkn string) ([]Instrument, error) {
+	var instrumentResponse InstrumentDetailsResponse
+
+	reqHdr := http.Header{}
+	reqHdr.Set("Authorization", "Bearer "+c.accessTokenSnapshot())
+	reqHdr.Set("x-http-request-info", c.infoHeader)
+	reqHdr.Set("Content-Type", "application/json")
+
+	ctx, cancel := context.WithTimeout(c.sessionCtx, 5*time.Second)
+	defer cancel()
+
+	ctx = WithHeaders(ctx, reqHdr)
+	fullURL := c.config.URL + c.config.InstrumentsURL + "/" + wkn
+
+	response, err := c.client.GetJSON(ctx, fullURL, &instrumentResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	if response.StatusCode != 200 {
+		return nil, fmt.Errorf("failed to get instrument details for WKN %s, status code: %d", wkn, response.StatusCode)
+	}
+
+	return instrumentResponse.Values, nil
 }
 
 // RefreshTokenPeriodically starts a timer that periodically refreshes the access token

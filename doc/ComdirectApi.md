@@ -69,4 +69,6 @@ Fehlermeldungen sind im Header-Feld „x-http-response-info“ untergebracht.
 - Letzte Umsätze laden
 - Alle Depots laden (nötig für die DepotId, die für die anderen Depotabfragen benötigt wird.)
 - Depot-Positionen laden
-- Einzelne Position laden? Macht das Sinn?
+- Einzelne Position laden
+- Depot Transaktionen laden
+- Instruments (Info über Wertpapier laden)

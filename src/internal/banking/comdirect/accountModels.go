@@ -111,11 +111,18 @@ type DepotPositionsResponse struct {
 	Values     []DepotPosition `json:"values"`
 }
 
+// Die StaticData-Struktur unterscheidet sich bei der DepotTransactions-Abfrage und bei der Instrument-Abfrage.
+// Zur Zeit benutze ich die Struktur bei beiden, da die relevanten Felder bei beiden enthalten sind.
+// Sollte es in Zukunft zu Problemen kommen, muss die Struktur separiert und angepasst werden.
 type StaticData struct {
 	InstrumentType     string `json:"instrumentType"`
 	SettlementCurrency string `json:"settlementCurrency"`
 }
 
+// Die Instrument-Struktur enthält die relevanten Informationen zu einem Finanzinstrument,
+// wie z.B. die WKN, ISIN, den Namen und die statischen Daten.
+// Auch hier sind Unterschiede zwischen der DepotTransactions-Abfrage und der Instrument-Abfrage,
+// aber zur Zeit ist diese Struktur ausreichend. Ansonsten sollte man auch hier eine separate Struktur erstellen und anpassen.
 type Instrument struct {
 	Wkn        string     `json:"wkn"`
 	Isin       string     `json:"isin"`
@@ -138,4 +145,9 @@ type DepotTransaction struct {
 type DepotTransactionsResponse struct {
 	Paging Paging             `json:"paging"`
 	Values []DepotTransaction `json:"values"`
+}
+
+type InstrumentDetailsResponse struct {
+	Paging Paging       `json:"paging"`
+	Values []Instrument `json:"values"`
 }

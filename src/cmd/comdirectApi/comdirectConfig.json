@@ -7,5 +7,6 @@
     "accountTransactionsUrl": "/banking/v1/accounts/{{accountUUID}}/transactions",
     "depotsUrl": "/brokerage/clients/user/v3/depots",
     "depotPositionsUrl": "/brokerage/v3/depots/{{depotUUID}}/positions",
-    "depotTransactionsUrl": "/brokerage/v3/depots/{{depotUUID}}/transactions"
+    "depotTransactionsUrl": "/brokerage/v3/depots/{{depotUUID}}/transactions",
+    "instrumentsUrl": "/brokerage/v1/instruments"
 }

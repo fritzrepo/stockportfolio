@@ -25,7 +25,7 @@
                 //"readTransactions"
                 //"compute"
                 "readCsv"
-            ],
+            ]
         },
         {
             "name": "Server",
@@ -58,7 +58,13 @@
             "mode": "debug",
             "program": "${workspaceFolder}/src/cmd/comdirectApi/",
             "cwd": "${workspaceFolder}/src/cmd/comdirectApi",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "args": [
+                //"balances"
+                //"depot"
+                //"instrument"
+                //"orders
+            ]
         },
         {
             "name": "Playground",

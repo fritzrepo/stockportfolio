@@ -72,3 +72,4 @@ Fehlermeldungen sind im Header-Feld „x-http-response-info“ untergebracht.
 - Einzelne Position laden
 - Depot Transaktionen laden
 - Instruments (Info über Wertpapier laden)
+- Orders

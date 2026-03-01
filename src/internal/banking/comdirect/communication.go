@@ -106,10 +106,7 @@ func (c *Communication) EndSession() error {
 func (c *Communication) GetAccountBalances() ([]AccountBalance, error) {
 	var accountBalances AccountBalancesResponse
 
-	reqHdr := http.Header{}
-	reqHdr.Set("Authorization", "Bearer "+c.accessTokenSnapshot())
-	reqHdr.Set("x-http-request-info", c.infoHeader)
-	reqHdr.Set("Content-Type", "application/json")
+	reqHdr := getReadHeaders(c)
 
 	ctx, cancel := context.WithTimeout(c.sessionCtx, 5*time.Second)
 	defer cancel()
@@ -132,10 +129,7 @@ func (c *Communication) GetAccountBalances() ([]AccountBalance, error) {
 func (c *Communication) GetAccoutBalance(accountId string) (AccountBalance, error) {
 	var accountBalance AccountBalance
 
-	reqHdr := http.Header{}
-	reqHdr.Set("Authorization", "Bearer "+c.accessTokenSnapshot())
-	reqHdr.Set("x-http-request-info", c.infoHeader)
-	reqHdr.Set("Content-Type", "application/json")
+	reqHdr := getReadHeaders(c)
 
 	ctx, cancel := context.WithTimeout(c.sessionCtx, 5*time.Second)
 	defer cancel()
@@ -158,10 +152,7 @@ func (c *Communication) GetAccoutBalance(accountId string) (AccountBalance, erro
 func (c *Communication) GetLastAccountTransactions(accountId string) ([]AccountTransaction, error) {
 	var accountTransactions AccountTransactionsResponse
 
-	reqHdr := http.Header{}
-	reqHdr.Set("Authorization", "Bearer "+c.accessTokenSnapshot())
-	reqHdr.Set("x-http-request-info", c.infoHeader)
-	reqHdr.Set("Content-Type", "application/json")
+	reqHdr := getReadHeaders(c)
 
 	ctx, cancel := context.WithTimeout(c.sessionCtx, 5*time.Second)
 	defer cancel()
@@ -184,10 +175,7 @@ func (c *Communication) GetLastAccountTransactions(accountId string) ([]AccountT
 func (c *Communication) GetDepots() ([]Depot, error) {
 	var depotsResponse DepotsResponse
 
-	reqHdr := http.Header{}
-	reqHdr.Set("Authorization", "Bearer "+c.accessTokenSnapshot())
-	reqHdr.Set("x-http-request-info", c.infoHeader)
-	reqHdr.Set("Content-Type", "application/json")
+	reqHdr := getReadHeaders(c)
 
 	ctx, cancel := context.WithTimeout(c.sessionCtx, 5*time.Second)
 	defer cancel()
@@ -210,10 +198,7 @@ func (c *Communication) GetDepots() ([]Depot, error) {
 func (c *Communication) GetDepotPositions(depotId string) (DepotPositionsResponse, error) {
 	var depotPositionsResponse DepotPositionsResponse
 
-	reqHdr := http.Header{}
-	reqHdr.Set("Authorization", "Bearer "+c.accessTokenSnapshot())
-	reqHdr.Set("x-http-request-info", c.infoHeader)
-	reqHdr.Set("Content-Type", "application/json")
+	reqHdr := getReadHeaders(c)
 
 	ctx, cancel := context.WithTimeout(c.sessionCtx, 5*time.Second)
 	defer cancel()
@@ -236,10 +221,7 @@ func (c *Communication) GetDepotPositions(depotId string) (DepotPositionsRespons
 func (c *Communication) GetDepotPosition(depotId string, position string) (DepotPosition, error) {
 	var depotPosition DepotPosition
 
-	reqHdr := http.Header{}
-	reqHdr.Set("Authorization", "Bearer "+c.accessTokenSnapshot())
-	reqHdr.Set("x-http-request-info", c.infoHeader)
-	reqHdr.Set("Content-Type", "application/json")
+	reqHdr := getReadHeaders(c)
 
 	ctx, cancel := context.WithTimeout(c.sessionCtx, 5*time.Second)
 	defer cancel()
@@ -262,10 +244,7 @@ func (c *Communication) GetDepotPosition(depotId string, position string) (Depot
 func (c *Communication) GetDepotTransactions(depotId string) ([]DepotTransaction, error) {
 	var depotTransactionsResponse DepotTransactionsResponse
 
-	reqHdr := http.Header{}
-	reqHdr.Set("Authorization", "Bearer "+c.accessTokenSnapshot())
-	reqHdr.Set("x-http-request-info", c.infoHeader)
-	reqHdr.Set("Content-Type", "application/json")
+	reqHdr := getReadHeaders(c)
 
 	ctx, cancel := context.WithTimeout(c.sessionCtx, 5*time.Second)
 	defer cancel()
@@ -291,10 +270,7 @@ func (c *Communication) GetDepotTransactions(depotId string) ([]DepotTransaction
 func (c *Communication) GetInstrumentDetails(wkn string) ([]Instrument, error) {
 	var instrumentResponse InstrumentDetailsResponse
 
-	reqHdr := http.Header{}
-	reqHdr.Set("Authorization", "Bearer "+c.accessTokenSnapshot())
-	reqHdr.Set("x-http-request-info", c.infoHeader)
-	reqHdr.Set("Content-Type", "application/json")
+	reqHdr := getReadHeaders(c)
 
 	ctx, cancel := context.WithTimeout(c.sessionCtx, 5*time.Second)
 	defer cancel()
@@ -650,6 +626,14 @@ func (c *Communication) revokeToken() error {
 
 	fmt.Println("Access token revoked successfully.")
 	return nil
+}
+
+func getReadHeaders(c *Communication) http.Header {
+	reqHdr := http.Header{}
+	reqHdr.Set("Authorization", "Bearer "+c.accessTokenSnapshot())
+	reqHdr.Set("x-http-request-info", c.infoHeader)
+	reqHdr.Set("Content-Type", "application/json")
+	return reqHdr
 }
 
 func (c *Communication) accessTokenSnapshot() string {
